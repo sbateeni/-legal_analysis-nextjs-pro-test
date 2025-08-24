@@ -20,7 +20,7 @@ export default function ConnectionStatus() {
       const isConnected = await checkSupabaseConnection()
       setStatus(isConnected ? 'connected' : 'failed')
       setLastCheck(new Date())
-    } catch (error) {
+    } catch (_error) {
       setStatus('failed')
       setLastCheck(new Date())
     }

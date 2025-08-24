@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import Link from 'next/link'
 import { useTheme } from '../contexts/ThemeContext'
 import { isMobile } from '../utils/crypto'
 
@@ -44,8 +43,9 @@ export default function Home() {
       setTimeout(() => {
         router.push('/dashboard')
       }, 1500)
-    } catch (err: any) {
-      setError(err.message || 'حدث خطأ أثناء تسجيل الدخول')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -101,8 +101,9 @@ export default function Home() {
       setTimeout(() => {
         router.push('/dashboard')
       }, 1500)
-    } catch (err: any) {
-      setError(err.message || 'حدث خطأ أثناء إنشاء المكتب')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء المكتب'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

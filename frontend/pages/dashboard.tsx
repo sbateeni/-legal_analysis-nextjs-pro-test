@@ -10,7 +10,7 @@ export default function Dashboard() {
     totalTemplates: number
     totalUsers: number
     casesThisMonth: number
-    recentActivity: any[]
+    recentActivity: unknown[]
   }>({
     totalCases: 0,
     totalTemplates: 0,
@@ -44,8 +44,9 @@ export default function Dashboard() {
       setCases(casesData)
       setTemplates(templatesData)
       
-    } catch (err: any) {
-      setError(err.message || 'حدث خطأ في تحميل البيانات')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
