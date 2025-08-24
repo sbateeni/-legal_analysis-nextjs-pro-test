@@ -103,6 +103,22 @@ export default function Header() {
             maxWidth: isMobile() ? '200px' : 'none',
             textAlign: 'center'
           }}>؟ تعليمات</Link>
+          
+          <Link href="/test-connection" style={{
+            color: '#fff', background: isActive('/test-connection') ? '#dc2626' : '#dc2626cc', borderRadius: 8, padding: isMobile() ? '8px 16px' : '4px 14px', fontWeight: 700, fontSize: isMobile() ? 14 : 16, textDecoration: 'none', boxShadow: '0 1px 4px #0002', letterSpacing: 1, transition: 'background 0.2s',
+            width: isMobile() ? '100%' : 'auto',
+            minWidth: isMobile() ? '140px' : 'auto',
+            maxWidth: isMobile() ? '200px' : 'none',
+            textAlign: 'center'
+          }}>🧪 اختبار</Link>
+          
+          <Link href="/test-simple" style={{
+            color: '#fff', background: isActive('/test-simple') ? '#059669' : '#059669cc', borderRadius: 8, padding: isMobile() ? '8px 16px' : '4px 14px', fontWeight: 700, fontSize: isMobile() ? 14 : 16, textDecoration: 'none', boxShadow: '0 1px 4px #0002', letterSpacing: 1, transition: 'background 0.2s',
+            width: isMobile() ? '100%' : 'auto',
+            minWidth: isMobile() ? '140px' : 'auto',
+            maxWidth: isMobile() ? '200px' : 'none',
+            textAlign: 'center'
+          }}>🔧 اختبار مبسط</Link>
         </div>
       </nav>
     </header>

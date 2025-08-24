@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react'
-import { checkSupabaseConnection, getCurrentUser, getSession, supabase } from '../utils/supabase-config'
-import { getAllCases, getAllTemplates } from '../utils/supabase'
+import { supabase } from '../utils/supabase-config'
 
-export default function TestConnection() {
+export default function TestSimple() {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
-  const [user, setUser] = useState<any>(null)
-  const [session, setSession] = useState<any>(null)
   const [cases, setCases] = useState<any[]>([])
   const [templates, setTemplates] = useState<any[]>([])
   const [error, setError] = useState<string>('')
@@ -25,72 +22,47 @@ export default function TestConnection() {
     try {
       // اختبار الاتصال الأساسي
       addLog('اختبار الاتصال مع قاعدة البيانات...')
-      const isConnected = await checkSupabaseConnection()
       
-      if (isConnected) {
-        setConnectionStatus('connected')
-        addLog('✅ الاتصال مع قاعدة البيانات ناجح')
-      } else {
+      const { data, error } = await supabase
+        .from('legal_cases')
+        .select('*')
+        .limit(5)
+      
+      if (error) {
         setConnectionStatus('failed')
-        addLog('❌ فشل الاتصال مع قاعدة البيانات')
+        setError(error.message)
+        addLog(`❌ خطأ في الاتصال: ${error.message}`)
         return
       }
+      
+      setConnectionStatus('connected')
+      setCases(data || [])
+      addLog(`✅ الاتصال ناجح! تم قراءة ${data?.length || 0} قضية`)
 
-      // اختبار الحصول على المستخدم
-      addLog('اختبار الحصول على معلومات المستخدم...')
-      try {
-        const currentUser = await getCurrentUser()
-        setUser(currentUser)
-        
-        if (currentUser) {
-          addLog(`✅ المستخدم: ${currentUser.email}`)
-        } else {
-          addLog('ℹ️ لا يوجد مستخدم مسجل دخول')
-        }
-              } catch (error: any) {
-          addLog(`⚠️ خطأ في الحصول على المستخدم: ${error?.message || 'خطأ غير معروف'}`)
-        }
-
-      // اختبار الحصول على الجلسة
-      addLog('اختبار الحصول على الجلسة...')
-      try {
-        const currentSession = await getSession()
-        setSession(currentSession)
-        
-        if (currentSession) {
-          addLog('✅ الجلسة نشطة')
-        } else {
-          addLog('ℹ️ لا توجد جلسة نشطة')
-        }
-              } catch (error: any) {
-          addLog(`⚠️ خطأ في الحصول على الجلسة: ${error?.message || 'خطأ غير معروف'}`)
-        }
-
-      // اختبار قراءة البيانات
-      addLog('اختبار قراءة القضايا...')
-      try {
-        const casesData = await getAllCases()
-        setCases(casesData)
-        addLog(`✅ تم قراءة ${casesData.length} قضية`)
-      } catch (err) {
-        addLog(`❌ خطأ في قراءة القضايا: ${err}`)
-      }
-
+      // اختبار قراءة القوالب
       addLog('اختبار قراءة القوالب...')
       try {
-        const templatesData = await getAllTemplates()
-        setTemplates(templatesData)
-        addLog(`✅ تم قراءة ${templatesData.length} قالب`)
-      } catch (err) {
-        addLog(`❌ خطأ في قراءة القوالب: ${err}`)
+        const { data: templatesData, error: templatesError } = await supabase
+          .from('legal_templates')
+          .select('*')
+          .limit(5)
+        
+        if (templatesError) {
+          addLog(`⚠️ خطأ في قراءة القوالب: ${templatesError.message}`)
+        } else {
+          setTemplates(templatesData || [])
+          addLog(`✅ تم قراءة ${templatesData?.length || 0} قالب`)
+        }
+      } catch (err: any) {
+        addLog(`⚠️ خطأ في قراءة القوالب: ${err?.message || 'خطأ غير معروف'}`)
       }
 
       addLog('🎉 انتهى اختبار الاتصال بنجاح!')
       
     } catch (err: any) {
       setConnectionStatus('failed')
-      setError(err.message)
-      addLog(`❌ خطأ في الاختبار: ${err.message}`)
+      setError(err?.message || 'خطأ غير معروف')
+      addLog(`❌ خطأ في الاختبار: ${err?.message || 'خطأ غير معروف'}`)
     }
   }
 
@@ -101,9 +73,7 @@ export default function TestConnection() {
       // اختبار إنشاء قضية جديدة
       const testCase = {
         name: `قضية اختبار ${Date.now()}`,
-        created_at: new Date().toISOString(),
-        tags: ['اختبار'],
-        user_id: user?.id
+        tags: ['اختبار']
       }
 
       const { data, error } = await supabase
@@ -127,7 +97,7 @@ export default function TestConnection() {
       }
       
     } catch (err: any) {
-      addLog(`❌ خطأ في اختبار الكتابة: ${err.message}`)
+      addLog(`❌ خطأ في اختبار الكتابة: ${err?.message || 'خطأ غير معروف'}`)
     }
   }
 
@@ -135,7 +105,7 @@ export default function TestConnection() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          اختبار الاتصال مع Supabase
+          اختبار الاتصال المبسط مع Supabase
         </h1>
 
         {/* حالة الاتصال */}
@@ -162,46 +132,39 @@ export default function TestConnection() {
           )}
         </div>
 
-        {/* معلومات المستخدم والجلسة */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-3">معلومات المستخدم</h3>
-            {user ? (
-              <div className="space-y-2">
-                <p><strong>البريد الإلكتروني:</strong> {user.email}</p>
-                <p><strong>المعرف:</strong> {user.id}</p>
-                <p><strong>تاريخ الإنشاء:</strong> {new Date(user.created_at).toLocaleDateString('ar-SA')}</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">لا يوجد مستخدم مسجل دخول</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-3">معلومات الجلسة</h3>
-            {session ? (
-              <div className="space-y-2">
-                <p><strong>نوع الجلسة:</strong> {session.type}</p>
-                <p><strong>تاريخ الانتهاء:</strong> {new Date(session.expires_at).toLocaleDateString('ar-SA')}</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">لا توجد جلسة نشطة</p>
-            )}
-          </div>
-        </div>
-
         {/* إحصائيات البيانات */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold mb-3">القضايا</h3>
             <p className="text-2xl font-bold text-blue-600">{cases.length}</p>
             <p className="text-gray-500">قضية موجودة</p>
+            {cases.length > 0 && (
+              <div className="mt-3 text-sm">
+                {cases.map(case_ => (
+                  <div key={case_.id} className="p-2 bg-blue-50 rounded mb-2">
+                    <strong>{case_.name}</strong>
+                    <div className="text-gray-600">
+                      {case_.tags?.join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold mb-3">القوالب</h3>
             <p className="text-2xl font-bold text-green-600">{templates.length}</p>
             <p className="text-gray-500">قالب موجود</p>
+            {templates.length > 0 && (
+              <div className="mt-3 text-sm">
+                {templates.map(template => (
+                  <div key={template.id} className="p-2 bg-green-50 rounded mb-2">
+                    <strong>{template.name}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -218,8 +181,7 @@ export default function TestConnection() {
             
             <button
               onClick={testWriteOperation}
-              disabled={!user}
-              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded"
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
             >
               اختبار الكتابة
             </button>
