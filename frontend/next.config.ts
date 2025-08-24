@@ -12,8 +12,14 @@ const nextConfig: NextConfig = {
   
   // إعدادات الصور
   images: {
-    domains: [],
+    domains: ['localhost', '127.0.0.1'],
     formats: ['image/webp', 'image/avif'],
+  },
+  
+  // إعدادات البيئة
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
   
   // إعدادات الأمان
