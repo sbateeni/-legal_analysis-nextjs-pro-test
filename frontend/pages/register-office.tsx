@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { createOffice, createUser } from '../utils/saas-service'
+import { initializeDatabase, checkDatabaseStructure } from '../utils/db-init'
 import type { CreateOffice, CreateUser } from '../types/saas'
 
 export default function RegisterOffice() {
@@ -23,6 +24,7 @@ export default function RegisterOffice() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
   const generateSlug = (name: string) => {
     return name
@@ -70,10 +72,29 @@ export default function RegisterOffice() {
     setError('')
 
     try {
-      // إنشاء المكتب
+      // 1. التحقق من هيكل قاعدة البيانات
+      console.log('🔍 فحص هيكل قاعدة البيانات...')
+      const dbStructure = await checkDatabaseStructure()
+      
+      // 2. إذا لم تكن قاعدة البيانات جاهزة، قم بتهيئتها
+      if (!dbStructure.hasOfficeIdColumns || !dbStructure.hasOfficesTable) {
+        console.log('🚀 قاعدة البيانات تحتاج تهيئة...')
+        setMessage('جاري تهيئة قاعدة البيانات...')
+        
+        const initResult = await initializeDatabase()
+        if (!initResult.success) {
+          throw new Error(`فشل في تهيئة قاعدة البيانات: ${initResult.error}`)
+        }
+        
+        setMessage('تم تهيئة قاعدة البيانات بنجاح!')
+      }
+      
+      // 3. إنشاء المكتب
+      setMessage('جاري إنشاء المكتب...')
       const office = await createOffice(officeData)
       
-      // إنشاء المستخدم الأول (admin)
+      // 4. إنشاء المستخدم الأول (admin)
+      setMessage('جاري إنشاء حساب المدير...')
       const admin: CreateUser = {
         office_id: office.id,
         email: adminData.email,
@@ -84,8 +105,12 @@ export default function RegisterOffice() {
       
       await createUser(admin)
       
-      // توجيه المستخدم للصفحة الرئيسية
-      router.push('/dashboard')
+      setMessage('تم إنشاء المكتب بنجاح! جاري التوجيه...')
+      
+      // 5. توجيه المستخدم للوحة التحكم
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
       
     } catch (err: any) {
       setError(err.message || 'حدث خطأ أثناء إنشاء المكتب')
@@ -232,6 +257,12 @@ export default function RegisterOffice() {
               {error && (
                 <div className="p-4 bg-red-100 border border-red-300 rounded text-red-700">
                   {error}
+                </div>
+              )}
+
+              {message && (
+                <div className="p-4 bg-green-100 border border-green-300 rounded text-green-700">
+                  {message}
                 </div>
               )}
 
