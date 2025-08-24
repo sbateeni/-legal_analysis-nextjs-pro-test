@@ -343,6 +343,12 @@ export default function RegisterOffice() {
                 </div>
               )}
 
+              {message && (
+                <div className="p-4 bg-green-100 border border-green-300 rounded text-green-700">
+                  {message}
+                </div>
+              )}
+
               <div className="flex space-x-4">
                 <button
                   type="button"
