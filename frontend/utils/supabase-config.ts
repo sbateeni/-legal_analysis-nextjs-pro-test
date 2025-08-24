@@ -1,11 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
 // تكوين Supabase مع إعدادات متقدمة
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+// التحقق من وجود المتغيرات البيئية
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ متغيرات Supabase البيئية غير موجودة!')
+  console.warn('يرجى إنشاء ملف .env.local مع:')
+  console.warn('NEXT_PUBLIC_SUPABASE_URL=your_project_url')
+  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key')
+}
 
 // إنشاء عميل Supabase مع إعدادات مخصصة
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder_key',
+  {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { checkSupabaseConnection, getCurrentUser, getSession } from '../utils/supabase-config'
+import { checkSupabaseConnection, getCurrentUser, getSession, supabase } from '../utils/supabase-config'
 import { getAllCases, getAllTemplates } from '../utils/supabase'
 
 export default function TestConnection() {

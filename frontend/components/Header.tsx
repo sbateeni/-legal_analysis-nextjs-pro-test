@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
+import ConnectionStatusFallback from './ConnectionStatusFallback';
 
 export default function Header() {
   const { darkMode, setDarkMode, theme, mounted } = useTheme();
@@ -40,6 +41,15 @@ export default function Header() {
           flexWrap: 'wrap',
           maxWidth: '100%'
         }}>
+          {/* مؤشر حالة الاتصال */}
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 6,
+            padding: '4px 8px',
+            fontSize: isMobile() ? 12 : 14
+          }}>
+            <ConnectionStatusFallback />
+          </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
             style={{

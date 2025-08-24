@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// التحقق من وجود المتغيرات البيئية
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('⚠️ متغيرات Supabase البيئية غير موجودة!')
+  console.warn('يرجى إنشاء ملف .env.local مع:')
+  console.warn('NEXT_PUBLIC_SUPABASE_URL=your_project_url')
+  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key')
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder_key'
+)
 
 // أنواع البيانات المتوافقة مع Supabase
 export interface AnalysisStage {
