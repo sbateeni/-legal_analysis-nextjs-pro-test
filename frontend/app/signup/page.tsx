@@ -40,16 +40,29 @@ export default function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
       
+      // تحسين معالجة الاستجابة
+      let data;
+      try {
+        // محاولة تحليل الاستجابة كـ JSON
+        data = await res.json();
+      } catch (jsonError) {
+        // إذا فشل تحليل JSON، فقد يكون الخادم أرجع HTML أو نص عادي
+        console.error('فشل تحليل استجابة الخادم كـ JSON:', jsonError);
+        throw new Error('خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+      }
+      
       if (!res.ok) {
-        const data = await res.json();
         if (data.error === 'email_in_use') {
           throw new Error('البريد الإلكتروني مستخدم بالفعل');
+        } else if (data.message) {
+          throw new Error(data.message);
         }
         throw new Error('تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى');
       }
       
       window.location.href = '/login';
     } catch (err) {
+      console.error('خطأ في إنشاء الحساب:', err);
       setError(err instanceof Error ? err.message : 'تعذر إنشاء الحساب. تأكد من البريد وكلمة المرور.');
     } finally {
       setLoading(false);
