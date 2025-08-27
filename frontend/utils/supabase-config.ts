@@ -13,24 +13,38 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // إنشاء عميل Supabase مع إعدادات مخصصة
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder_key',
-  {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'legal-analysis-app'
+let supabase: any
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true
+        },
+        db: { schema: 'public' },
+        global: { headers: { 'X-Client-Info': 'legal-analysis-app' } }
+      }
+    )
+  } else {
+    const msg = 'Supabase env vars are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    const fail = () => { throw new Error(msg) }
+    supabase = {
+      from: fail,
+      rpc: fail,
+      auth: { signInWithPassword: fail, signUp: fail, getUser: fail }
     }
   }
-})
+} catch {
+  const msg = 'Supabase client initialization failed. Check your env vars.'
+  const fail = () => { throw new Error(msg) }
+  supabase = { from: fail, rpc: fail }
+}
+
+export { supabase }
 
 // دالة للتحقق من حالة الاتصال
 export async function checkSupabaseConnection() {
