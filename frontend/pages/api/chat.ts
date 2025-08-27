@@ -175,7 +175,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let modelJson: ChatModelResponse | null = null;
     try {
-      const candidate = JSON.parse(rawText);
+      // تنظيف النص من أي HTML محتمل
+      const cleanText = rawText.replace(/<!DOCTYPE[^>]*>/i, '').trim();
+      if (!cleanText.startsWith('{')) {
+        throw new Error('النص ليس JSON صالح');
+      }
+      const candidate = JSON.parse(cleanText);
       const validated = ChatModelResponseSchema.parse(candidate);
       modelJson = validated;
     } catch {
@@ -225,4 +230,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       details: errorMessage
     });
   }
-} 
+}
