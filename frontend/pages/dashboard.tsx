@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { getOfficeAnalytics, getCasesByOffice, getTemplatesByOffice } from '../utils/saas-service'
+import { getOfficeAnalytics, getCasesByOffice, getTemplatesByOffice, getOfficeBySlug, createOffice } from '../utils/saas-service'
 import type { LegalCase, LegalTemplate } from '../types/saas'
 
 export default function Dashboard() {
@@ -31,13 +31,41 @@ export default function Dashboard() {
     try {
       setLoading(true)
       
-      // في الوقت الحالي، نستخدم office_id ثابت للاختبار
-      const officeId = 'test-office-id' // سيتم تحديثه لاحقاً
+      // احصل على مكتب جاهز للاستخدام أو أنشئ مكتباً تجريبياً تلقائياً
+      let officeId: string | null = null
+      try {
+        const office = await getOfficeBySlug('test-office')
+        if (office) {
+          officeId = office.id as unknown as string
+        }
+      } catch {}
+
+      if (!officeId) {
+        try {
+          const demoOffice = await createOffice({
+            name: 'مكتب تجريبي',
+            slug: 'test-office',
+            description: 'مكتب تم إنشاؤه تلقائياً',
+            email: 'admin@office.com',
+            subscription_plan: 'free',
+            max_users: 5
+          } as any)
+          officeId = (demoOffice as any).id
+        } catch {
+          throw new Error('تعذر تحديد مكتب افتراضي. يرجى إنشاء مكتب من "إنشاء مكتب جديد".')
+        }
+      }
+
+      if (!officeId) {
+        throw new Error('لا يوجد مكتب افتراضي متاح. يرجى إنشاء مكتب جديد.')
+      }
+
+      const resolvedOfficeId: string = officeId
       
       const [analyticsData, casesData, templatesData] = await Promise.all([
-        getOfficeAnalytics(officeId),
-        getCasesByOffice(officeId),
-        getTemplatesByOffice(officeId)
+        getOfficeAnalytics(resolvedOfficeId),
+        getCasesByOffice(resolvedOfficeId),
+        getTemplatesByOffice(resolvedOfficeId)
       ])
       
       setAnalytics(analyticsData)
