@@ -339,6 +339,32 @@ a:hover {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* أدوات مساعدة لتقليل inline styles */
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.btn-primary { background: #4f46e5; }
+.btn-success { background: #22c55e; }
+.btn-danger { background: #ef4444; }
+.btn-info { background: #0ea5e9; }
+.btn-ghost { background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: #fff; }
+
+.card-ui {
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--border);
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--accent);
+}
+
 /* تحسينات للأجهزة المحمولة */
 @media (max-width: 768px) {
   .mobile-optimized {

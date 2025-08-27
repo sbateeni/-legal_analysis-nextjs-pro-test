@@ -663,9 +663,7 @@ export default function Home() {
                   padding: isMobile() ? 20 : 32,
                   border: `1.5px solid ${theme.border}`,
                 }}>
-                  <div style={{fontSize: isMobile() ? 24 : 32, fontWeight: 900, color: theme.accent, marginBottom: 16}}>
-                    📊 ملخص النتائج
-                  </div>
+                  <div className="section-title" style={{ marginBottom: 16 }}>📊 ملخص النتائج</div>
 
                   {/* أزرار التصدير */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -677,7 +675,7 @@ export default function Home() {
                         if (stages.length === 0) return;
                         exportResultsToPDF(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
                       }}
-                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}
+                      className="btn btn-danger"
                     >
                       ⬇️ تصدير PDF
                     </button>
@@ -689,11 +687,11 @@ export default function Home() {
                         if (stages.length === 0) return;
                         exportResultsToDocx(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
                       }}
-                      style={{ background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}
+                      className="btn btn-info"
                     >
                       ⬇️ تصدير Docx
                     </button>
-                    <Link href="/exports" style={{ background: '#22c55e', color: '#fff', borderRadius: 8, padding: '10px 14px', fontWeight: 700, textDecoration: 'none' }}>
+                    <Link href="/exports" className="btn btn-success" style={{ textDecoration: 'none' }}>
                       📚 سجل التصدير
                     </Link>
                   </div>
