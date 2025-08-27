@@ -5,8 +5,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { theme, mounted } = useTheme();
-  const showHeader = !mounted ? true : !isMobile();
+  const { theme } = useTheme();
+  const showHeader = !isMobile();
   return (
     <div style={{
       fontFamily: 'Tajawal, Arial, sans-serif',
