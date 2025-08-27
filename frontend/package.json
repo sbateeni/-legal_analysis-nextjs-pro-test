@@ -25,6 +25,7 @@
     "idb-keyval": "^6.2.2",
     "jsonwebtoken": "^9.0.2",
     "@prisma/client": "^5.18.0",
+    "next-auth": "^4.24.7",
     "jspdf": "^3.0.1",
     "next": "^15.3.5",
     "react": "^18.2.0",

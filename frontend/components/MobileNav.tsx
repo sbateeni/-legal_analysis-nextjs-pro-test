@@ -1,3 +1,4 @@
+"use client";
 import Link from 'next/link';
 import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
