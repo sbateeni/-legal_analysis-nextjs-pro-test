@@ -182,9 +182,7 @@ export default function ChatPage() {
     setInputMessage(suggestion);
   };
 
-  const handleNextStepClick = (step: string) => {
-    setInputMessage(`أخبرني المزيد عن: ${step}`);
-  };
+
 
   const handleStop = () => {
     try { controllerRef.current?.abort(); } catch {}
@@ -290,7 +288,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     autoResizeInput();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputMessage, isLoading]);
 
   return (
