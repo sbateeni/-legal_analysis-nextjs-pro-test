@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAllCases, LegalCase, loadApiKey } from '../utils/db';
+import { loadAppSettings } from '../utils/appSettings';
+import { Button } from '../components/UI';
 import { extractApiError, mapApiErrorToMessage } from '../utils/errors';
 
 interface ChatMessage {
@@ -26,6 +28,7 @@ export default function ChatPage() {
   const controllerRef = useRef<AbortController | null>(null);
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
+  const [preferredModel, setPreferredModel] = useState<string>('gemini-1.5-flash');
 
   useEffect(() => {
     // تحميل API Key من قاعدة البيانات الموحدة
@@ -36,6 +39,8 @@ export default function ChatPage() {
     getAllCases().then((dbCases) => {
       setCases(dbCases || []);
     });
+    // تحميل نموذج مفضّل
+    loadAppSettings().then(s => setPreferredModel(s.preferredModel || 'gemini-1.5-flash'));
   }, []);
 
   useEffect(() => {
@@ -92,6 +97,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-model': preferredModel,
         },
         body: JSON.stringify({
           message: messageToSend,
@@ -241,7 +247,7 @@ export default function ChatPage() {
                 </div>
               )}
               <div style={{display:'flex', gap:8}}>
-                <button onClick={copyTranscript} aria-label="نسخ المحادثة كاملة" className="btn btn-info" style={{ background: '#0ea5e9' }}>نسخ المحادثة</button>
+                <Button onClick={copyTranscript} ariaLabel="نسخ المحادثة كاملة" variant="info" style={{ background: '#0ea5e9' }}>نسخ المحادثة</Button>
               </div>
             </div>
             <div style={{marginTop:6, color:'#6b7280', fontSize: isMobile()? 13:14}}>اسأل ضمن الإطار القانوني الفلسطيني لتحصل على إجابات مبنية على القوانين والأنظمة الفلسطينية</div>
@@ -451,33 +457,9 @@ export default function ChatPage() {
                   fontFamily: 'inherit'
                 }}
               />
-              <button
-                onClick={handleStop}
-                disabled={!isLoading}
-                aria-label="إيقاف الطلب الجاري"
-                className="btn btn-danger"
-                style={{ background: isLoading ? '#ef4444' : '#9ca3af', cursor: !isLoading ? 'not-allowed' : 'pointer' }}
-              >
-                ⏹️
-              </button>
-              <button
-                onClick={() => sendMessage()}
-                disabled={isLoading || !inputMessage.trim()}
-                aria-label="إرسال الرسالة"
-                className="btn btn-info"
-                style={{ background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2, cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer' }}
-              >
-                {isLoading ? '⏳' : '📤'}
-              </button>
-              <button
-                onClick={handleRegenerate}
-                disabled={isLoading || !lastUserMessage}
-                aria-label="إعادة توليد آخر إجابة"
-                className="btn btn-success"
-                style={{ background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981', cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer' }}
-              >
-                🔁
-              </button>
+              <Button onClick={handleStop} disabled={!isLoading} ariaLabel="إيقاف الطلب الجاري" variant="danger" style={{ background: isLoading ? '#ef4444' : '#9ca3af', cursor: !isLoading ? 'not-allowed' : 'pointer' }}>⏹️</Button>
+              <Button onClick={() => sendMessage()} disabled={isLoading || !inputMessage.trim()} ariaLabel="إرسال الرسالة" variant="info" style={{ background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2, cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer' }}>{isLoading ? '⏳' : '📤'}</Button>
+              <Button onClick={handleRegenerate} disabled={isLoading || !lastUserMessage} ariaLabel="إعادة توليد آخر إجابة" variant="success" style={{ background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981', cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer' }}>🔁</Button>
             </div>
           </div>
         </div>

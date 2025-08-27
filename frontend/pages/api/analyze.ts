@@ -20,11 +20,12 @@ import stages from '../../stages';
 const STAGES = Object.keys(stages);
 
 // دالة استدعاء Gemini API
-async function callGeminiAPI(prompt: string, apiKey: string): Promise<string> {
+async function callGeminiAPI(prompt: string, apiKey: string, modelName?: string): Promise<string> {
   if (!apiKey) throw new Error('يرجى إدخال مفتاح Gemini API الخاص بك.');
   
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const name = modelName || (globalThis as any).__PREFERRED_MODEL__ || 'gemini-1.5-flash';
+  const model = genAI.getGenerativeModel({ model: name });
   
   try {
   const result = await model.generateContent(prompt);
@@ -77,6 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // تنظيف وتحقق من المدخلات
   const { text, stageIndex, apiKey, previousSummaries, finalPetition, partyRole } = req.body;
+  const preferredModel = (req.headers['x-model'] as string) || 'gemini-1.5-flash';
     
     const request: AnalysisRequest = {
       text: sanitizeText(text || ''),
@@ -133,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const petitionPrompt = buildFinalPetitionPrompt(request.text, trimmedSummaries, context);
 
       try {
-        const analysis = await callGeminiAPI(petitionPrompt, request.apiKey);
+        const analysis = await callGeminiAPI(petitionPrompt, request.apiKey, preferredModel);
         return res.status(200).json({ 
           stage: 'العريضة النهائية', 
           analysis,
@@ -167,7 +169,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // التحقق من Cache
-    const cachedAnalysis = getCachedAnalysis(request.text, request.stageIndex);
+    const cachedAnalysis = getCachedAnalysis(request.text, request.stageIndex, preferredModel);
     if (cachedAnalysis) {
       return res.status(200).json({ 
         stage: stageName, 
@@ -193,10 +195,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const prompt = buildEnhancedPrompt(stageDetails, request.text, trimmedSummaries, context);
 
     try {
-      const analysis = await callGeminiAPI(prompt, request.apiKey);
+      const analysis = await callGeminiAPI(prompt, request.apiKey, preferredModel);
       
       // حفظ في Cache
-      cacheAnalysis(request.text, request.stageIndex, analysis);
+      cacheAnalysis(request.text, request.stageIndex, analysis, preferredModel);
 
       const response: AnalysisResponse = {
         stage: stageName,

@@ -13,8 +13,9 @@ export function makeChatCacheKey(params: {
   caseType?: string;
   currentStage?: number;
   previousAnalysisHash?: string;
+  modelName?: string;
 }): string {
-  const base = `${params.message.slice(0, 400)}|${params.caseType ?? ''}|${params.currentStage ?? ''}`;
+  const base = `${params.message.slice(0, 400)}|${params.caseType ?? ''}|${params.currentStage ?? ''}|${params.modelName ?? ''}`;
   const prevHash = params.previousAnalysisHash ?? '';
   return base + '|' + prevHash.slice(-64);
 }

@@ -7,6 +7,7 @@ import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import ArticleCard from '../components/ArticleCard';
 import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
+import { loadExportPreferences } from '../utils/exportSettings';
 import { Button, Card } from '../components/UI';
 
 
@@ -55,6 +56,7 @@ export default function Home() {
   const [stageErrors, setStageErrors] = useState<(string|null)[]>(() => Array(ALL_STAGES.length).fill(null));
   const [stageShowResult, setStageShowResult] = useState<boolean[]>(() => Array(ALL_STAGES.length).fill(false));
   const [partyRole, setPartyRole] = useState<PartyRole | ''>('');
+  const [preferredModel, setPreferredModel] = useState<string>('gemini-1.5-flash');
 
   useEffect(() => {
     setMounted(true);
@@ -64,6 +66,10 @@ export default function Home() {
     // تحميل مفتاح API من قاعدة البيانات عند بدء التشغيل
     loadApiKey().then(val => {
       if (val) setApiKey(val);
+    });
+    // تحميل نموذج مفضّل من الإعدادات
+    import('../utils/appSettings').then(({ loadAppSettings }) => {
+      loadAppSettings().then(s => setPreferredModel(s.preferredModel || 'gemini-1.5-flash'));
     });
 
     // معالجة تثبيت التطبيق كتطبيق أيقونة
@@ -154,7 +160,7 @@ export default function Home() {
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-model': preferredModel },
           body: JSON.stringify({ text: mainText, stageIndex: -1, apiKey, previousSummaries: summaries, finalPetition: true, partyRole: partyRole || undefined }),
         });
         const data = await res.json();
@@ -201,7 +207,7 @@ export default function Home() {
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-model': preferredModel },
         body: JSON.stringify({ text, stageIndex: idx, apiKey, previousSummaries, partyRole: partyRole || undefined }),
       });
       const data = await res.json();
@@ -663,24 +669,26 @@ export default function Home() {
                   {/* أزرار التصدير */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
+                        const prefs = await loadExportPreferences();
                         const stages = stageResults
                           .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
                           .filter(Boolean) as { title: string; content: string }[];
                         if (stages.length === 0) return;
-                        exportResultsToPDF(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
+                        exportResultsToPDF(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined }, prefs);
                       }}
                       variant="danger"
                     >
                       ⬇️ تصدير PDF
                     </Button>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
+                        const prefs = await loadExportPreferences();
                         const stages = stageResults
                           .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
                           .filter(Boolean) as { title: string; content: string }[];
                         if (stages.length === 0) return;
-                        exportResultsToDocx(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
+                        exportResultsToDocx(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined }, prefs);
                       }}
                       variant="info"
                     >

@@ -143,11 +143,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Cache مفتاح
     const prevHash = (context?.previousAnalysis || '').slice(-256);
+    const modelName = (req.headers['x-model'] as string) || 'gemini-1.5-flash';
     const cacheKey = makeChatCacheKey({
       message: cleanMessage,
       caseType: context?.caseType,
       currentStage: context?.currentStage,
       previousAnalysisHash: prevHash,
+      modelName,
     });
 
     const cached = chatCacheGet(cacheKey);
@@ -168,7 +170,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const prompt = buildChatPrompt(cleanMessage, conversationHistory as ChatMessage[], context);
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const preferredModel = modelName;
+    const model = genAI.getGenerativeModel({ model: preferredModel });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const rawText = response.text();

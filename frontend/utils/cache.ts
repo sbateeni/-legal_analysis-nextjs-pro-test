@@ -12,14 +12,14 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // دقيقة واحدة
 const MAX_REQUESTS_PER_WINDOW = 10; // 10 طلبات في الدقيقة
 
 // دالة إنشاء مفتاح Cache
-export function createCacheKey(text: string, stageIndex: number): string {
+export function createCacheKey(text: string, stageIndex: number, modelName: string = 'gemini-1.5-flash'): string {
   const textHash = text.substring(0, 100).replace(/\s+/g, ''); // أول 100 حرف بدون مسافات
-  return `${textHash}_${stageIndex}`;
+  return `${textHash}_${stageIndex}_${modelName}`;
 }
 
 // دالة الحصول على تحليل من Cache
-export function getCachedAnalysis(text: string, stageIndex: number): string | null {
-  const key = createCacheKey(text, stageIndex);
+export function getCachedAnalysis(text: string, stageIndex: number, modelName: string = 'gemini-1.5-flash'): string | null {
+  const key = createCacheKey(text, stageIndex, modelName);
   const cached = analysisCache.get(key);
   
   if (!cached) return null;
@@ -34,8 +34,8 @@ export function getCachedAnalysis(text: string, stageIndex: number): string | nu
 }
 
 // دالة حفظ تحليل في Cache
-export function cacheAnalysis(text: string, stageIndex: number, analysis: string): void {
-  const key = createCacheKey(text, stageIndex);
+export function cacheAnalysis(text: string, stageIndex: number, analysis: string, modelName: string = 'gemini-1.5-flash'): void {
+  const key = createCacheKey(text, stageIndex, modelName);
   const now = Date.now();
   
   const cachedAnalysis: CachedAnalysis = {
@@ -111,6 +111,18 @@ export function cleanupExpiredCache(): void {
       rateLimitCache.delete(key);
     }
   }
+}
+
+// إبطال كاش التحليل حسب نموذج اختياري
+export function invalidateAnalysisCache(modelName?: string): number {
+  let removed = 0;
+  for (const key of analysisCache.keys()) {
+    if (!modelName || key.endsWith(`_${modelName}`)) {
+      analysisCache.delete(key);
+      removed++;
+    }
+  }
+  return removed;
 }
 
 // تنظيف دوري كل 5 دقائق

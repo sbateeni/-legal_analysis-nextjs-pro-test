@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx';
+import type { ExportPreferences } from './exportSettings';
 
 export interface ExportStageItem {
   title: string;
@@ -21,32 +22,39 @@ function buildHeaderText(options: ExportOptions): string {
   return parts.join(' | ');
 }
 
-export function exportResultsToPDF(stages: ExportStageItem[], options: ExportOptions) {
+export function exportResultsToPDF(stages: ExportStageItem[], options: ExportOptions, prefs?: ExportPreferences) {
   if (typeof window === 'undefined') return;
   const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-  const margin = 48;
+  const margin = Math.max(24, prefs?.marginPt || 48);
   const pageWidth = doc.internal.pageSize.getWidth();
   const maxWidth = pageWidth - margin * 2;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('ملخص التحليل القانوني', margin, 64, { align: 'left' });
+  const headerTitle = prefs?.headerText || 'ملخص التحليل القانوني';
+  doc.text(headerTitle, margin, margin + 16, { align: 'left' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(buildHeaderText(options), margin, 84, { maxWidth });
+  doc.text(buildHeaderText(options), margin, margin + 36, { maxWidth });
 
-  let y = 120;
+  let y = margin + 72;
+  if (prefs?.logoDataUrl) {
+    try { doc.addImage(prefs.logoDataUrl, 'PNG', pageWidth - margin - 64, margin, 64, 64); } catch {}
+  }
   stages.forEach((s, idx) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     const titleText = `${idx + 1}. ${s.title}`;
-    doc.text(titleText, margin, y);
+    if (prefs?.includeStages !== false) doc.text(titleText, margin, y);
     y += 18;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    const lines = doc.splitTextToSize(s.content || '-', maxWidth);
+    const bodyParts: string[] = [];
+    if (prefs?.includeInputs) bodyParts.push(`النص: ${s.content}`);
+    if (prefs?.includeOutputs !== false) bodyParts.push(`النتيجة: ${s.content}`);
+    const lines = doc.splitTextToSize((bodyParts.join('\n\n') || '-') as string, maxWidth);
     lines.forEach((line: string) => {
       if (y > doc.internal.pageSize.getHeight() - margin) {
         doc.addPage();
@@ -66,6 +74,11 @@ export function exportResultsToPDF(stages: ExportStageItem[], options: ExportOpt
   const safeCase = (options.caseName || 'case').replace(/[^\p{L}\p{N}_\- ]/gu, '').slice(0, 50).trim().replace(/\s+/g, '-');
   const dateStr = new Date(options.createdAt || Date.now()).toISOString().slice(0,10);
   const filename = `${safeCase || 'case'}-analysis-${dateStr}.pdf`;
+  if (prefs?.footerText) {
+    const ph = doc.internal.pageSize.getHeight();
+    doc.setFontSize(9);
+    doc.text(prefs.footerText, margin, ph - 12, { maxWidth });
+  }
   doc.save(filename);
 
   // سجل تصدير محلي
@@ -77,13 +90,13 @@ export function exportResultsToPDF(stages: ExportStageItem[], options: ExportOpt
   } catch {}
 }
 
-export async function exportResultsToDocx(stages: ExportStageItem[], options: ExportOptions) {
+export async function exportResultsToDocx(stages: ExportStageItem[], options: ExportOptions, prefs?: ExportPreferences) {
   if (typeof window === 'undefined') return;
   const header = buildHeaderText(options);
 
   const children: Paragraph[] = [
     new Paragraph({
-      text: 'ملخص التحليل القانوني',
+      text: prefs?.headerText || 'ملخص التحليل القانوني',
       heading: HeadingLevel.HEADING_1,
     }),
     new Paragraph({ text: header }),
@@ -98,7 +111,10 @@ export async function exportResultsToDocx(stages: ExportStageItem[], options: Ex
         spacing: { before: 200, after: 50 },
       }),
     );
-    const contentLines = (s.content || '-').split('\n');
+    const parts: string[] = [];
+    if (prefs?.includeInputs) parts.push(`النص: ${s.content}`);
+    if (prefs?.includeOutputs !== false) parts.push(`النتيجة: ${s.content}`);
+    const contentLines = (parts.join('\n\n') || '-').split('\n');
     contentLines.forEach((line) => {
       children.push(new Paragraph({ text: line }));
     });
