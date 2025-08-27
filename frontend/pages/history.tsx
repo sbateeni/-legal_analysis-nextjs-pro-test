@@ -78,9 +78,11 @@ export default function History() {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [editNameId, setEditNameId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState<string>('');
-  // بحث عن القضايا
+  // بحث وفلاتر
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState('');
+  const [minStages, setMinStages] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<'date_desc'|'date_asc'|'stages_desc'|'stages_asc'>('date_desc');
   // حذف المتغيرات غير المستخدمة:
   // const [newStageIndex, setNewStageIndex] = useState<number>(0);
   // const [newStageInput, setNewStageInput] = useState<string>('');
@@ -217,14 +219,23 @@ export default function History() {
         padding: isMobile() ? '1rem 0.5rem' : '2.5rem 1rem',
       }}>
         {/* Card البحث والتصدير/الاستيراد */}
-        <div style={{background:theme.card, borderRadius:14, boxShadow:`0 2px 12px ${theme.shadow}`, border:`1.5px solid ${theme.border}`, padding:isMobile()?12:22, marginBottom:28, display:'flex', flexDirection:isMobile()?'column':'row', alignItems:'center', gap:14, justifyContent:'center'}}>
+        <div style={{background:theme.card, borderRadius:14, boxShadow:`0 2px 12px ${theme.shadow}`, border:`1.5px solid ${theme.border}`, padding:isMobile()?12:22, marginBottom:28, display:'flex', flexDirection:'column', alignItems:'stretch', gap:14}}>
           <button onClick={handleExport} className="btn btn-info" style={{ background: theme.accent }}>⬇️ تصدير القضايا</button>
           <label className="btn btn-primary" style={{ display:'inline-block', background: theme.accent2 }}>
             ⬆️ استيراد قضايا
             <input type="file" accept="application/json" onChange={handleImport} style={{ display: 'none' }} />
           </label>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 ابحث عن قضية..." style={{flex:1, minWidth:180, maxWidth:320, borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122'}} />
-          <input type="text" value={tagFilter} onChange={e => setTagFilter(e.target.value)} placeholder="🏷️ فلترة بالوسم..." style={{minWidth:180, maxWidth:260, borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122'}} />
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile()? '1fr' : 'repeat(4, 1fr)', gap: 10 }}>
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 ابحث عن قضية..." style={{ borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122' }} />
+            <input type="text" value={tagFilter} onChange={e => setTagFilter(e.target.value)} placeholder="🏷️ فلترة بالوسم..." style={{ borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122' }} />
+            <input type="number" min={0} value={minStages} onChange={e => setMinStages(Number(e.target.value) || 0)} placeholder="🔢 حد أدنى للمراحل" style={{ borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122' }} />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} style={{ borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, background:darkMode?'#232946':'#fff', color:theme.text }}>
+              <option value="date_desc">الأحدث أولاً</option>
+              <option value="date_asc">الأقدم أولاً</option>
+              <option value="stages_desc">أكثر مراحل</option>
+              <option value="stages_asc">أقل مراحل</option>
+            </select>
+          </div>
         </div>
         {/* عرض القضايا */}
         <div className="font-headline" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:18}}>
@@ -297,6 +308,13 @@ export default function History() {
             {cases
               .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
               .filter(c => !tagFilter.trim() || (c.tags||[]).some(t => t.toLowerCase().includes(tagFilter.toLowerCase())))
+              .filter(c => (c.stages?.length || 0) >= minStages)
+              .sort((a, b) => {
+                if (sortBy === 'date_desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                if (sortBy === 'date_asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                if (sortBy === 'stages_desc') return (b.stages?.length || 0) - (a.stages?.length || 0);
+                return (a.stages?.length || 0) - (b.stages?.length || 0);
+              })
               .map(c => (
               <div key={c.id} className="article-card fade-in" style={{border:`2px solid ${theme.accent2}`, padding:isMobile()?12:24, position:'relative', minHeight:200, display:'flex', flexDirection:'column', justifyContent:'space-between'}}>
                 <div>
