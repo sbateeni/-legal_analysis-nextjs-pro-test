@@ -697,12 +697,7 @@ export default function Home() {
                   </div>
                   
                   {/* عرض إحصائيات سريعة */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile() ? '1fr' : 'repeat(3, 1fr)',
-                    gap: 16,
-                    marginBottom: 24,
-                  }}>
+                  <div className="stats-grid" style={{ marginBottom: 24 }}>
                     <div style={{
                       background: theme.resultBg,
                       borderRadius: 12,

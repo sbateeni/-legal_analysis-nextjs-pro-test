@@ -255,7 +255,7 @@ export default function ChatPage() {
                 </div>
               )}
               <div style={{display:'flex', gap:8}}>
-                <button onClick={copyTranscript} aria-label="نسخ المحادثة كاملة" style={{background:'#f3f4f6', border:`1px solid ${theme.border}`, borderRadius:8, padding:'6px 10px', cursor:'pointer'}}>نسخ المحادثة</button>
+                <button onClick={copyTranscript} aria-label="نسخ المحادثة كاملة" className="btn btn-info" style={{ background: '#0ea5e9' }}>نسخ المحادثة</button>
               </div>
             </div>
             <div style={{marginTop:6, color:'#6b7280', fontSize: isMobile()? 13:14}}>اسأل ضمن الإطار القانوني الفلسطيني لتحصل على إجابات مبنية على القوانين والأنظمة الفلسطينية</div>
@@ -469,16 +469,8 @@ export default function ChatPage() {
                 onClick={handleStop}
                 disabled={!isLoading}
                 aria-label="إيقاف الطلب الجاري"
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: !isLoading ? '#9ca3af' : '#ef4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  cursor: !isLoading ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold'
-                }}
+                className="btn btn-danger"
+                style={{ background: isLoading ? '#ef4444' : '#9ca3af', cursor: !isLoading ? 'not-allowed' : 'pointer' }}
               >
                 ⏹️
               </button>
@@ -486,16 +478,8 @@ export default function ChatPage() {
                 onClick={() => sendMessage()}
                 disabled={isLoading || !inputMessage.trim()}
                 aria-label="إرسال الرسالة"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold'
-                }}
+                className="btn btn-info"
+                style={{ background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2, cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer' }}
               >
                 {isLoading ? '⏳' : '📤'}
               </button>
@@ -503,16 +487,8 @@ export default function ChatPage() {
                 onClick={handleRegenerate}
                 disabled={isLoading || !lastUserMessage}
                 aria-label="إعادة توليد آخر إجابة"
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold'
-                }}
+                className="btn btn-success"
+                style={{ background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981', cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer' }}
               >
                 🔁
               </button>

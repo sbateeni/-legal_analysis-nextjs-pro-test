@@ -4,6 +4,7 @@ import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import { jsPDF } from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
 
 const STAGES = [
   'المرحلة الأولى: تحديد المشكلة القانونية',
@@ -217,8 +218,8 @@ export default function History() {
       }}>
         {/* Card البحث والتصدير/الاستيراد */}
         <div style={{background:theme.card, borderRadius:14, boxShadow:`0 2px 12px ${theme.shadow}`, border:`1.5px solid ${theme.border}`, padding:isMobile()?12:22, marginBottom:28, display:'flex', flexDirection:isMobile()?'column':'row', alignItems:'center', gap:14, justifyContent:'center'}}>
-          <button onClick={handleExport} style={{background:`linear-gradient(90deg, ${theme.accent2} 0%, ${theme.accent} 100%)`, color:'#fff', border:'none', borderRadius:8, padding:'10px 22px', fontWeight:800, fontSize:16, cursor:'pointer', boxShadow:'0 2px 8px #4f46e522', letterSpacing:1, transition:'background 0.2s'}}>⬇️ تصدير القضايا</button>
-          <label style={{background:`linear-gradient(90deg, ${theme.accent} 0%, ${theme.accent2} 100%)`, color:'#fff', borderRadius:8, padding:'10px 22px', fontWeight:800, fontSize:16, cursor:'pointer', boxShadow:'0 2px 8px #6366f122', display:'inline-block', letterSpacing:1, transition:'background 0.2s'}}>
+          <button onClick={handleExport} className="btn btn-info" style={{ background: theme.accent }}>⬇️ تصدير القضايا</button>
+          <label className="btn btn-primary" style={{ display:'inline-block', background: theme.accent2 }}>
             ⬆️ استيراد قضايا
             <input type="file" accept="application/json" onChange={handleImport} style={{ display: 'none' }} />
           </label>
@@ -235,7 +236,7 @@ export default function History() {
         ) : selectedCaseId ? (
           // تفاصيل القضية المختارة
           <div style={{marginBottom:32}}>
-            <button onClick={() => setSelectedCaseId(null)} style={{marginBottom:18, background:theme.accent2, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontWeight:700, fontSize:16, cursor:'pointer', boxShadow:'0 1px 4px #6366f122'}}>← العودة للقضايا</button>
+            <button onClick={() => setSelectedCaseId(null)} className="btn btn-info" style={{ marginBottom: 18, background: theme.accent2 }}>← العودة للقضايا</button>
             {cases.filter(c => c.id === selectedCaseId).map(c => (
               <div key={c.id} style={{background:theme.card, borderRadius:18, boxShadow:`0 2px 16px ${theme.shadow}`, border:`2px solid ${theme.accent2}`, padding:isMobile()?14:32, marginBottom:18}}>
                 <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10, flexWrap:'wrap'}}>
@@ -250,15 +251,15 @@ export default function History() {
                       <button onClick={() => {
                         setCases(cs => cs.map(cc => cc.id === c.id ? {...cc, name: editNameValue} : cc));
                         setEditNameId(null);
-                      }} style={{background:theme.accent2, color:'#fff', border:'none', borderRadius:8, padding:'6px 14px', fontWeight:700, fontSize:15, cursor:'pointer', marginRight:6}}>حفظ</button>
-                      <button onClick={() => setEditNameId(null)} style={{background:'#eee', color:theme.accent2, border:'none', borderRadius:8, padding:'6px 14px', fontWeight:700, fontSize:15, cursor:'pointer'}}>إلغاء</button>
+                      }} className="btn btn-info" style={{ marginRight: 6, background: theme.accent2 }}>حفظ</button>
+                      <button onClick={() => setEditNameId(null)} className="btn" style={{ background: '#9ca3af' }}>إلغاء</button>
                     </>
                   ) : (
                     <>
                       <span style={{fontWeight:900, fontSize:26, color:theme.accent}}>{c.name}</span>
-                      <button onClick={() => handleExportCasePdf(c)} style={{background:'#ef4444', color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontWeight:700, fontSize:14, cursor:'pointer'}}>تصدير PDF</button>
-                      <button onClick={() => handleExportCaseDocx(c)} style={{background:'#0ea5e9', color:'#fff', border:'none', borderRadius:8, padding:'6px 12px', fontWeight:700, fontSize:14, cursor:'pointer'}}>تصدير Word</button>
-                      <button onClick={() => {setEditNameId(c.id); setEditNameValue(c.name);}} style={{background:theme.accent2, color:'#fff', border:'none', borderRadius:8, padding:'5px 12px', fontWeight:700, fontSize:15, cursor:'pointer', marginRight:8}}>تعديل الاسم</button>
+                      <button onClick={() => handleExportCasePdf(c)} className="btn btn-danger">تصدير PDF</button>
+                      <button onClick={() => handleExportCaseDocx(c)} className="btn btn-info">تصدير Word</button>
+                      <button onClick={() => {setEditNameId(c.id); setEditNameValue(c.name);}} className="btn btn-info" style={{ background: theme.accent2, marginRight: 8 }}>تعديل الاسم</button>
                     </>
                   )}
                 </div>
@@ -276,7 +277,7 @@ export default function History() {
                       <div style={{fontWeight:600, color:theme.accent, marginBottom:4}}>مخرجات التحليل:</div>
                       <div style={{background:darkTheme.card, borderRadius:8, padding:'8px 12px', fontSize:16, whiteSpace:'pre-line', border:`1px solid ${theme.border}`}}>{stage.output}</div>
                       <div style={{fontSize:13, color:'#888', marginTop:6}}>تاريخ المرحلة: {new Date(stage.date).toLocaleString('ar-EG')}</div>
-                      <button onClick={() => handleDeleteStage(c.id, stage.id)} style={{position:'absolute', left:14, top:14, background:'#ff6b6b', color:'#fff', border:'none', borderRadius:8, padding:isMobile()?'4px 8px':'5px 12px', fontWeight:700, fontSize:isMobile()?12:14, cursor:'pointer', boxShadow:'0 1px 4px #ff6b6b33', transition:'background 0.2s'}}>حذف المرحلة</button>
+                      <button onClick={() => handleDeleteStage(c.id, stage.id)} className="btn btn-danger" style={{position:'absolute', left:14, top:14, padding:isMobile()?'4px 8px':'5px 12px', fontSize:isMobile()?12:14}}>حذف المرحلة</button>
                     </div>
                   ))}
                   {/* واجهة المحادثة */}
@@ -286,7 +287,7 @@ export default function History() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => handleDeleteCase(c.id)} style={{marginTop:18, background:'#ff6b6b', color:'#fff', border:'none', borderRadius:8, padding:isMobile()?'7px 14px':'8px 22px', fontWeight:800, fontSize:isMobile()?15:17, cursor:'pointer', boxShadow:'0 1px 4px #ff6b6b33', transition:'background 0.2s'}}>حذف القضية</button>
+                <button onClick={() => handleDeleteCase(c.id)} className="btn btn-danger" style={{marginTop:18, padding:isMobile()?'7px 14px':'8px 22px', fontSize:isMobile()?15:17}}>حذف القضية</button>
               </div>
             ))}
           </div>
@@ -297,9 +298,9 @@ export default function History() {
               .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
               .filter(c => !tagFilter.trim() || (c.tags||[]).some(t => t.toLowerCase().includes(tagFilter.toLowerCase())))
               .map(c => (
-              <div key={c.id} className="article-card fade-in" style={{border:`2px solid ${theme.accent2}`, padding:isMobile()?12:24, cursor:'pointer', position:'relative', minHeight:170, display:'flex', flexDirection:'column', justifyContent:'space-between'}} onClick={() => setSelectedCaseId(c.id)}>
+              <div key={c.id} className="article-card fade-in" style={{border:`2px solid ${theme.accent2}`, padding:isMobile()?12:24, position:'relative', minHeight:200, display:'flex', flexDirection:'column', justifyContent:'space-between'}}>
                 <div>
-                  <div className="headline-sm font-headline" style={{color:theme.accent, marginBottom:8, textOverflow:'ellipsis', overflow:'hidden', whiteSpace:'nowrap'}}>{c.name}</div>
+                  <div className="headline-sm font-headline" style={{color:theme.accent, marginBottom:8, textOverflow:'ellipsis', overflow:'hidden', whiteSpace:'nowrap'}} onClick={() => setSelectedCaseId(c.id)}>{c.name}</div>
                   <div style={{fontSize:14, color:'#888', marginBottom:10}}>تاريخ الإنشاء: {new Date(c.createdAt).toLocaleString('ar-EG')}</div>
                   <div style={{fontSize:15, color:theme.accent2, marginBottom:8}}>عدد المراحل: {c.stages.length}</div>
                   {!!(c.tags && c.tags.length) && (
@@ -310,7 +311,11 @@ export default function History() {
                     </div>
                   )}
                 </div>
-                <button onClick={e => {e.stopPropagation(); handleDeleteCase(c.id);}} style={{position:'absolute', left:18, top:18, background:`linear-gradient(90deg, #ff6b6b 0%, #ffb6b6 100%)`, color:'#fff', border:'none', borderRadius:8, padding:isMobile()?'7px 14px':'8px 18px', fontWeight:800, fontSize:isMobile()?14:16, cursor:'pointer', boxShadow:'0 1px 4px #ff6b6b33', transition:'background 0.2s'}}>حذف</button>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:8 }}>
+                  <button onClick={e => { e.stopPropagation(); const stages = (c.stages||[]).map(s => ({ title: STAGES[s.stageIndex], content: s.output })); exportResultsToPDF(stages, { caseName: c.name }); }} className="btn btn-danger">PDF</button>
+                  <button onClick={e => { e.stopPropagation(); const stages = (c.stages||[]).map(s => ({ title: STAGES[s.stageIndex], content: s.output })); exportResultsToDocx(stages, { caseName: c.name }); }} className="btn btn-info">Word</button>
+                  <button onClick={e => {e.stopPropagation(); handleDeleteCase(c.id);}} className="btn btn-danger" style={{ background: '#ff6b6b' }}>حذف</button>
+                </div>
               </div>
             ))}
           </div>

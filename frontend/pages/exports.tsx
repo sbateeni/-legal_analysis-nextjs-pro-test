@@ -42,8 +42,8 @@ export default function ExportsPage() {
       </header>
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '1rem' }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button onClick={load} style={{ background: theme.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontWeight: 700 }}>تحديث</button>
-          <button onClick={clear} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontWeight: 700 }}>مسح السجل</button>
+          <button onClick={load} className="btn btn-info" style={{ background: theme.accent }}>تحديث</button>
+          <button onClick={clear} className="btn btn-danger">مسح السجل</button>
         </div>
 
         {logs.length === 0 ? (

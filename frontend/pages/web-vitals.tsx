@@ -48,7 +48,7 @@ export default function WebVitalsPage() {
       </header>
       <main style={{ maxWidth: 900, margin: '0 auto', padding: '1rem' }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button onClick={fetchSummary} style={{ background: theme.accent2, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>تحديث</button>
+          <button onClick={fetchSummary} className="btn btn-info" style={{ background: theme.accent2 }}>تحديث</button>
           <div style={{ opacity: 0.8 }}>العينات: {count}</div>
         </div>
 
