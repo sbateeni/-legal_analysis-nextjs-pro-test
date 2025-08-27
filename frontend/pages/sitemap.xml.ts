@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { GetServerSideProps } from 'next';
 
 const PAGES = ['/', '/chat', '/analytics', '/history', '/about', '/privacy', '/templates'];
 
@@ -7,7 +7,7 @@ function generateSiteMap(baseUrl: string) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const envSite = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
   const forwardedHost = (req.headers?.['x-forwarded-host'] as string) || (req.headers?.host as string) || '';
   const forwardedProto = (req.headers?.['x-forwarded-proto'] as string) || '';
@@ -16,11 +16,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Content-Type', 'application/xml');
   res.write(xml);
   res.end();
-}
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
+  return { props: {} };
 };
+
+export default function Sitemap() {
+  return null;
+}
 
