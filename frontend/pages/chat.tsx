@@ -30,6 +30,7 @@ export default function ChatPage() {
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   const [preferredModel, setPreferredModel] = useState<string>('gemini-1.5-flash');
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     // تحميل API Key من قاعدة البيانات الموحدة
@@ -227,6 +228,20 @@ export default function ChatPage() {
     const transcript = messages.map(m => `${m.role === 'user' ? 'المستخدم' : 'المساعد'}: ${m.content}`).join('\n\n');
     copyToClipboard(transcript);
   };
+
+  const autoResizeInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const max = isMobile() ? 300 : 240;
+    const next = Math.min(max, el.scrollHeight);
+    el.style.height = `${next}px`;
+  };
+
+  useEffect(() => {
+    autoResizeInput();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inputMessage, isLoading]);
 
   return (
     <div style={{
@@ -485,11 +500,13 @@ export default function ChatPage() {
             <div style={{
               display: 'flex',
               gap: '0.5rem',
-              alignItems: 'flex-end'
+              alignItems: isMobile()? 'stretch' : 'flex-end',
+              flexDirection: isMobile()? 'column' : 'row'
             }}>
               <textarea
+                ref={inputRef}
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={(e) => { setInputMessage(e.target.value); requestAnimationFrame(autoResizeInput); }}
                 onKeyPress={handleKeyPress}
                 placeholder="اكتب رسالتك هنا..."
                 disabled={isLoading}
@@ -502,13 +519,15 @@ export default function ChatPage() {
                   fontSize: '1rem',
                   resize: 'none',
                   minHeight: '44px',
-                  maxHeight: '120px',
+                  maxHeight: isMobile()? '300px' : '240px',
                   fontFamily: 'inherit'
                 }}
               />
-              <Button onClick={handleStop} disabled={!isLoading} ariaLabel="إيقاف الطلب الجاري" variant="danger" style={{ background: isLoading ? '#ef4444' : '#9ca3af', cursor: !isLoading ? 'not-allowed' : 'pointer' }}>⏹️</Button>
-              <Button onClick={() => sendMessage()} disabled={isLoading || !inputMessage.trim()} ariaLabel="إرسال الرسالة" variant="info" style={{ background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2, cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer' }}>{isLoading ? '⏳' : '📤'}</Button>
-              <Button onClick={handleRegenerate} disabled={isLoading || !lastUserMessage} ariaLabel="إعادة توليد آخر إجابة" variant="success" style={{ background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981', cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer' }}>🔁</Button>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+                <Button onClick={handleStop} disabled={!isLoading} ariaLabel="إيقاف الطلب الجاري" variant="danger" style={{ background: isLoading ? '#ef4444' : '#9ca3af', cursor: !isLoading ? 'not-allowed' : 'pointer' }}>⏹️</Button>
+                <Button onClick={() => sendMessage()} disabled={isLoading || !inputMessage.trim()} ariaLabel="إرسال الرسالة" variant="info" style={{ background: isLoading || !inputMessage.trim() ? '#9ca3af' : theme.accent2, cursor: isLoading || !inputMessage.trim() ? 'not-allowed' : 'pointer' }}>{isLoading ? '⏳' : '📤'}</Button>
+                <Button onClick={handleRegenerate} disabled={isLoading || !lastUserMessage} ariaLabel="إعادة توليد آخر إجابة" variant="success" style={{ background: isLoading || !lastUserMessage ? '#9ca3af' : '#10b981', cursor: isLoading || !lastUserMessage ? 'not-allowed' : 'pointer' }}>🔁</Button>
+              </div>
             </div>
           </div>
         </div>
