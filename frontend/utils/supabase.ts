@@ -11,10 +11,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key')
 }
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder_key'
-)
+let supabase: any
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey)
+  } else {
+    const msg = 'Supabase env vars are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    const fail = () => { throw new Error(msg) }
+    supabase = {
+      from: fail,
+      rpc: fail,
+      auth: { signInWithPassword: fail, signUp: fail, getUser: fail }
+    }
+  }
+} catch {
+  const msg = 'Supabase client initialization failed. Check your env vars.'
+  const fail = () => { throw new Error(msg) }
+  supabase = { from: fail, rpc: fail }
+}
+
+export { supabase }
 
 // أنواع البيانات المتوافقة مع Supabase
 export interface AnalysisStage {
