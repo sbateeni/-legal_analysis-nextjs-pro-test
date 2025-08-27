@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
+import ArticleCard from '../components/ArticleCard';
 
 const stages = [
   'تحديد المشكلة القانونية',
@@ -54,6 +55,39 @@ export default function About() {
               <li key={i} style={{marginBottom: isMobile() ? 3 : 4}}><b>{i+1}.</b> {stage}</li>
             ))}
           </ul>
+          {/* قسم بطاقات معرفية/أسئلة شائعة */}
+          <section className="fade-in-up" style={{ marginTop: isMobile() ? 18 : 24 }}>
+            <div style={{display:'flex', alignItems:'center', gap: isMobile()? 6:8, marginBottom: 10}}>
+              <span style={{fontSize: isMobile()? 18:22}}>📚</span>
+              <h2 className="headline-sm font-headline" style={{ color: theme.accent2, margin: 0 }}>مقالات مختصرة وأسئلة شائعة</h2>
+            </div>
+            <p className="font-body" style={{ color: 'var(--foreground)', opacity: 0.9, marginBottom: 12 }}>
+              موارد سريعة تساعدك على فهم المفاهيم القانونية الأساسية وآلية عمل المنصة.
+            </p>
+            <div className="grid-responsive">
+              <ArticleCard
+                imageUrl="https://images.unsplash.com/photo-1517971071642-34a2d3ecc9cd?q=80&w=1200&auto=format&fit=crop"
+                title="كيف تعمل مراحل التحليل؟"
+                excerpt="شرح مبسّط للتسلسل التراكمي للمراحل وكيفية الاستفادة القصوى من المنصة."
+                likes={56}
+                comments={9}
+              />
+              <ArticleCard
+                imageUrl="https://images.unsplash.com/photo-1528747008803-1d6a3d3b9a45?q=80&w=1200&auto=format&fit=crop"
+                title="الفرق بين الجنائي والمدني"
+                excerpt="لمحة سريعة توضّح أبرز الفروق بين الدعاوى الجزائية والدعاوى المدنية."
+                likes={72}
+                comments={11}
+              />
+              <ArticleCard
+                imageUrl="https://images.unsplash.com/photo-1473186505569-9c61870c11f9?q=80&w=1200&auto=format&fit=crop"
+                title="كتابة العريضة النهائية"
+                excerpt="أفضل الممارسات لصياغة عريضة قانونية واضحة ومدعّمة بالمراحل السابقة."
+                likes={61}
+                comments={6}
+              />
+            </div>
+          </section>
           <div className="fade-in-up" style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
             <span style={{fontSize: isMobile() ? 18 : 22}}>💡</span>
             <h2 className="headline-sm font-headline" style={{ color: theme.accent2, margin: 0 }}>ملاحظات هامة:</h2>
