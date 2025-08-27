@@ -29,15 +29,35 @@ async function callGemini(prompt: string, apiKey: string, modelName: string): Pr
   return response.text();
 }
 
-function buildPrompt(): string {
+function buildPrompt(sourceText: string): string {
   return [
-    'أنت مساعد مختص يرصد الأخبار القانونية الفلسطينية فقط خلال آخر 24 ساعة.',
-    'المطلوب: استخراج أي إعلان رسمي متعلق بـ: قرارات بقانون، قوانين جديدة، تعديلات على قوانين، نشر في الجريدة الرسمية، بلاغات أو تعليمات تنظيمية صادرة عن جهات فلسطينية رسمية.',
+    'أنت مساعد مختص يرصد الأخبار القانونية الفلسطينية فقط خلال آخر 24 ساعة من النص التالي.',
+    'المصدر التالي مأخوذ من موقع رسمي فلسطيني. استخرج فقط: قرارات بقانون، قوانين جديدة، تعديلات على قوانين، نشرات في الجريدة الرسمية، تعليمات أو بلاغات تنظيمية.',
     'التزم بما يلي:',
-    '- لا تذكر الأخبار السياسية أو الأمنية أو التصريحات العامة غير التشريعية.',
-    '- إن لم تتوفر أي تحديثات قانونية خلال آخر 24 ساعة، أجب بجملة واضحة: لا توجد تحديثات قانونية خلال 24 ساعة الماضية.',
-    '- نظّم الخرج في نقاط قصيرة، كل نقطة: العنوان المختصر، الجهة المُصدِرة، تاريخ اليوم، ولمحة بجملة واحدة.',
+    '- لا تذكر الأخبار السياسية/الأمنية أو المقالات العامة.',
+    '- إن لم تتوفر أي تحديثات قانونية خلال آخر 24 ساعة، أجب: لا توجد تحديثات قانونية خلال 24 ساعة الماضية.',
+    '- قدّم الناتج في نقاط موجزة: العنوان | الجهة المُصدِرة | التاريخ | لمحة سريعة.',
+    '',
+    'نص المصدر (مختصر):',
+    sourceText,
   ].join('\n');
+}
+
+async function fetchSourceText(): Promise<string> {
+  // جلب الصفحة الرئيسية للمصدر
+  const url = 'http://www.qanon.ps/index.php';
+  const res = await fetch(url, { method: 'GET' });
+  const html = await res.text();
+  // استخراج نصوص الروابط والعناوين بشكل بسيط
+  const matches = Array.from(html.matchAll(/<a[^>]*>([\s\S]*?)<\/a>/gi))
+    .map(m => m[1]
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&[^;]+;/g, ' ')
+      .trim())
+    .filter(Boolean)
+    .slice(0, 200);
+  // ضم أول 200 عنصر لتقليل الحجم
+  return matches.join('\n').slice(0, 8000);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -64,9 +84,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
       return res.status(200).json(response);
     }
+    // إذا لم يكن هناك كاش ولا يوجد طلب إجباري للتحديث، لا نقوم بالتوليد
+    if (!force && !shouldUseCache(modelName)) {
+      return res.status(204).end();
+    }
 
-    // Build prompt and query Gemini
-    const prompt = buildPrompt();
+    // Fetch source and generate new content
+    const sourceText = await fetchSourceText();
+    const prompt = buildPrompt(sourceText);
     const content = await callGemini(prompt, apiKey, modelName);
 
     // Cache for 24 hours

@@ -12,6 +12,7 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState<string>('');
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [imgSrc] = useState<string>('/DeWatermark.ai_1756309976798.jpeg');
 
   const fetchNews = async (force = false) => {
     setLoading(true);
@@ -19,6 +20,10 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
     try {
       const url = `/api/legal-news?model=${encodeURIComponent(model)}${force ? '&force=1' : ''}`;
       const res = await fetch(url, { headers: { 'x-api-key': apiKey, 'x-model': model } });
+      if (res.status === 204) {
+        // لا يوجد كاش بعد ولم يُجبر التحديث — لا تغييرات
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch legal news');
       setContent(data.content || '');
@@ -32,6 +37,7 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
 
   useEffect(() => {
     if (!apiKey) return;
+    // عند التحميل: نحاول فقط قراءة الكاش بدون توليد
     fetchNews(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey, model]);
@@ -42,7 +48,7 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
     <section className="fade-in-up" style={{ marginBottom: 24 }}>
       <div style={{ marginBottom: 12 }}>
         <img
-          src="/legal-news.jpg"
+          src={imgSrc}
           alt="أخبار قانونية"
           style={{
             width: '100%',
@@ -52,6 +58,7 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
             border: `1px solid ${theme.border}`,
             display: 'block'
           }}
+          onError={undefined}
         />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

@@ -286,21 +286,21 @@ export default function Home() {
             </p>
             <div className="grid-responsive">
               <ArticleCard
-                imageUrl="/icon-512x512.svg"
+                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
                 title="آخر المستجدات القانونية في فلسطين"
                 excerpt="متابعة سريعة لأبرز القرارات والتطورات القانونية والمؤسسية داخل فلسطين."
                 likes={124}
                 comments={18}
               />
               <ArticleCard
-                imageUrl="/icon-192x192.svg"
+                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
                 title="تطورات القدس والضفة الغربية"
                 excerpt="أهم الأخبار المتعلقة بالأحداث والقرارات المؤثرة في القدس والضفة الغربية."
                 likes={89}
                 comments={10}
               />
               <ArticleCard
-                imageUrl="/icon-512x512.svg"
+                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
                 title="المشهد الإنساني في غزة"
                 excerpt="ملخصات مختصرة حول الاحتياجات الإنسانية والتطورات المدنية في قطاع غزة."
                 likes={70}
