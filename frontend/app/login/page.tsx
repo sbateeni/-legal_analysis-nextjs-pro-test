@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -13,8 +14,8 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      // Placeholder until NextAuth is wired
-      await new Promise((r) => setTimeout(r, 600));
+      const res = await signIn('credentials', { email, password, redirect: false });
+      if (!res || res.error) throw new Error('invalid');
       window.location.href = '/';
     } catch (err) {
       setError('تعذر تسجيل الدخول. حاول مرة أخرى.');
