@@ -278,36 +278,7 @@ export default function Home() {
           {/* أخبار قانونية فلسطينية */}
           <LegalNews apiKey={apiKey} model={preferredModel} />
 
-          {/* شبكة مقالات تعريفية */}
-          <section className="fade-in-up" style={{ marginBottom: 24 }}>
-            <h2 className="headline-lg" style={{ margin: '0 0 12px 0' }}>مقالات قانونية مختارة</h2>
-            <p className="font-body" style={{ color: 'var(--foreground)', opacity: 0.9, marginBottom: 12 }}>
-              قراءات سريعة لفهم المفاهيم القانونية الأساسية.
-            </p>
-            <div className="grid-responsive">
-              <ArticleCard
-                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
-                title="آخر المستجدات القانونية في فلسطين"
-                excerpt="متابعة سريعة لأبرز القرارات والتطورات القانونية والمؤسسية داخل فلسطين."
-                likes={124}
-                comments={18}
-              />
-              <ArticleCard
-                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
-                title="تطورات القدس والضفة الغربية"
-                excerpt="أهم الأخبار المتعلقة بالأحداث والقرارات المؤثرة في القدس والضفة الغربية."
-                likes={89}
-                comments={10}
-              />
-              <ArticleCard
-                imageUrl="/DeWatermark.ai_1756309976798.jpeg"
-                title="المشهد الإنساني في غزة"
-                excerpt="ملخصات مختصرة حول الاحتياجات الإنسانية والتطورات المدنية في قطاع غزة."
-                likes={70}
-                comments={7}
-              />
-            </div>
-          </section>
+          {/* قسم المقالات التعريفية محذوف بناءً على طلب المستخدم */}
           {/* تنبيه إعداد المفتاح عند الحاجة */}
           {!apiKey && (
             <div style={{
