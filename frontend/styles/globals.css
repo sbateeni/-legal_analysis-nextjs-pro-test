@@ -1,5 +1,22 @@
 /* ملف الأنماط العامة */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=PT+Sans:wght@400;700&display=swap');
+
+/* متغيرات الألوان (Dark Elegant) */
+:root {
+  --background: hsl(230 36% 12%);
+  --foreground: hsl(225 15% 90%);
+  --primary: hsl(0 0% 100%);
+  --secondary: hsl(230 22% 18%);
+  --accent: hsl(230 40% 55%);
+  --accent-2: hsl(245 84% 67%);
+  --card: hsl(232 32% 20%);
+  --border: hsl(230 24% 35% / 0.6);
+  --input: hsl(230 24% 35% / 0.8);
+  --error-bg: hsl(355 25% 18%);
+  --error-text: hsl(355 100% 66%);
+  --shadow: 0 8px 30px hsl(230 40% 20% / 0.35);
+}
 
 /* إعادة تعيين الأنماط الافتراضية */
 * {
@@ -14,12 +31,41 @@ html {
 }
 
 body {
-  font-family: 'Tajawal', Arial, sans-serif;
+  font-family: 'PT Sans', 'Tajawal', Arial, sans-serif;
   direction: rtl;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+  color: var(--foreground);
+  background: radial-gradient(1200px 800px at 80% -10%, hsl(230 30% 20% / 0.6), transparent 60%),
+              radial-gradient(1200px 800px at 0% 110%, hsl(245 60% 30% / 0.35), transparent 60%),
+              var(--background);
+}
+
+/* أدوات الخطوط */
+.font-headline {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.2px;
+}
+.font-body {
+  font-family: 'PT Sans', 'Tajawal', Arial, sans-serif;
+}
+
+/* عناوين أنيقة */
+.headline-lg {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.2;
+  color: var(--primary);
+}
+.headline-sm {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: clamp(18px, 2.4vw, 24px);
+  line-height: 1.35;
+  color: var(--primary);
 }
 
 /* تحسينات للأجهزة المحمولة */
@@ -125,6 +171,19 @@ body {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* شبكة مرنة للمقالات */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .grid-responsive { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .grid-responsive { grid-template-columns: repeat(3, 1fr); }
+}
+
 .slide-in-right {
   animation: slideInRight 0.5s ease-out;
 }
@@ -175,6 +234,55 @@ a:hover {
 .card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* بطاقة مقال عصرية */
+.article-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.article-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px hsl(230 40% 20% / 0.45);
+  border-color: hsl(230 40% 60% / 0.7);
+}
+.article-card__image {
+  position: relative;
+  overflow: hidden;
+}
+.article-card__image img {
+  display: block;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  transform: scale(1);
+  transition: transform 0.4s ease;
+}
+.article-card:hover .article-card__image img {
+  transform: scale(1.05);
+}
+.article-card__content {
+  padding: 14px 16px 12px 16px;
+}
+.article-card__title {
+  margin: 0 0 8px 0;
+}
+.article-card__excerpt {
+  font-size: 14px;
+  color: hsl(225 15% 88% / 0.9);
+  line-height: 1.7;
+}
+.article-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 13px;
+  color: hsl(230 15% 75%);
 }
 
 /* تحسينات للتبويبات */
