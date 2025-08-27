@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { mapApiErrorToMessage, extractApiError } from '../utils/errors';
-import { saveApiKey, loadApiKey, addCase, getAllCases, updateCase, clearAllCases, LegalCase } from '../utils/db';
-import { set as idbSet } from 'idb-keyval';
+import { saveApiKey, loadApiKey, addCase, getAllCases, updateCase, LegalCase } from '../utils/db';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
-import ArticleCard from '../components/ArticleCard';
+// تمت إزالة بطاقات المقالات
 import LegalNews from '../components/LegalNews';
 import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
 import { loadExportPreferences } from '../utils/exportSettings';

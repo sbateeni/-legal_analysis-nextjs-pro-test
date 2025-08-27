@@ -166,6 +166,13 @@ export default function ChatPage() {
     }
   };
 
+  type StrategyPayload = {
+    strategy_title?: string;
+    strategy_steps?: string[];
+    legal_basis?: Array<{ source: string; article?: string }>;
+    tags?: string[];
+  };
+
   const handleSaveStrategy = async () => {
     if (!apiKey) {
       setError('يرجى إعداد مفتاح API أولاً');
@@ -182,19 +189,19 @@ export default function ChatPage() {
       setTimeout(async () => {
         const last = messages[messages.length - 1];
         if (!last || last.role !== 'assistant') { setSaving(false); return; }
-        let payload: any = null;
-        try { payload = JSON.parse(last.content); } catch {}
+        let payload: StrategyPayload | null = null;
+        try { payload = JSON.parse(last.content) as StrategyPayload; } catch {}
         const record = {
           id: `kb-${Date.now()}`,
-          topic: (payload?.strategy_title as string) || 'خطة قانونية من المحادثة',
+          topic: (payload?.strategy_title) || 'خطة قانونية من المحادثة',
           jurisdiction: 'PS',
-          strategy_title: (payload?.strategy_title as string) || 'خطة قانونية',
-          strategy_steps: (payload?.strategy_steps as string[]) || ['خطوة 1','خطوة 2'],
-          legal_basis: (payload?.legal_basis as Array<{source:string;article?:string}>) || [],
+          strategy_title: (payload?.strategy_title) || 'خطة قانونية',
+          strategy_steps: (payload?.strategy_steps) || ['خطوة 1','خطوة 2'],
+          legal_basis: (payload?.legal_basis) || [],
           patterns: [],
           risk_notes: [],
           citations: [],
-          tags: (payload?.tags as string[]) || ['محادثة','استراتيجية'],
+          tags: (payload?.tags) || ['محادثة','استراتيجية'],
           reviewed: false,
           createdAt: new Date().toISOString(),
         };
