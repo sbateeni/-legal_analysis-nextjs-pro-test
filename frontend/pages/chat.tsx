@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
-import { getAllCases, LegalCase } from '../utils/db';
+import { getAllCases, LegalCase, loadApiKey } from '../utils/db';
+import { extractApiError, mapApiErrorToMessage } from '../utils/errors';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -27,11 +28,10 @@ export default function ChatPage() {
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    // تحميل API Key من localStorage
-    const savedApiKey = localStorage.getItem('gemini_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
+    // تحميل API Key من قاعدة البيانات الموحدة
+    loadApiKey().then((key) => {
+      if (key) setApiKey(key);
+    });
     // تحميل القضايا المحفوظة
     getAllCases().then((dbCases) => {
       setCases(dbCases || []);
@@ -109,7 +109,8 @@ export default function ChatPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'حدث خطأ في الاتصال');
+        const { code, message } = extractApiError(response, data);
+        throw new Error(mapApiErrorToMessage(code, message));
       }
 
       const assistantMessage: ChatMessage = {

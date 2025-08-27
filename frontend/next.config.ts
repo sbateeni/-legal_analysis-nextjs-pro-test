@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   
   // إعدادات الصور
   images: {
-    domains: [],
+    domains: ['images.unsplash.com'],
     formats: ['image/webp', 'image/avif'],
   },
   
@@ -21,6 +21,20 @@ const nextConfig: NextConfig = {
     {
       source: '/(.*)',
       headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: [
+            "default-src 'self'",
+            process.env.NODE_ENV === 'production'
+              ? "script-src 'self'"
+              : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' https://generativelanguage.googleapis.com",
+            "frame-ancestors 'none'",
+          ].join('; '),
+        },
         {
           key: 'X-Frame-Options',
           value: 'DENY',
@@ -32,6 +46,19 @@ const nextConfig: NextConfig = {
         {
           key: 'Referrer-Policy',
           value: 'strict-origin-when-cross-origin',
+        },
+        {
+          key: 'Permissions-Policy',
+          value: [
+            'geolocation=()',
+            'camera=()',
+            'microphone=()',
+            'payment=()',
+            'usb=()',
+            'accelerometer=()',
+            'autoplay=(self)',
+            'screen-wake-lock=()'
+          ].join(', '),
         },
       ],
     },

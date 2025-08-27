@@ -1,0 +1,73 @@
+import { useEffect, useState } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
+
+interface ExportLogItem {
+  type: 'pdf' | 'docx';
+  caseName: string;
+  partyRole?: string;
+  date: string;
+  filename: string;
+}
+
+export default function ExportsPage() {
+  const { theme } = useTheme();
+  const [logs, setLogs] = useState<ExportLogItem[]>([]);
+
+  const load = () => {
+    try {
+      const raw = localStorage.getItem('export_logs') || '[]';
+      const parsed = JSON.parse(raw) as ExportLogItem[];
+      setLogs(parsed.reverse());
+    } catch {
+      setLogs([]);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const clear = () => {
+    try {
+      localStorage.removeItem('export_logs');
+      load();
+    } catch {}
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: theme.background, color: theme.text, fontFamily: 'Tajawal, Arial, sans-serif' }}>
+      <header style={{ background: theme.accent2, color: '#fff', padding: '1rem', textAlign: 'center' }}>
+        <h1 style={{ margin: 0 }}>سجل التصدير</h1>
+        <p style={{ margin: '0.25rem 0 0 0', opacity: 0.9 }}>آخر ملفات PDF/Docx التي قمت بتصديرها</p>
+      </header>
+      <main style={{ maxWidth: 900, margin: '0 auto', padding: '1rem' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button onClick={load} style={{ background: theme.accent, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontWeight: 700 }}>تحديث</button>
+          <button onClick={clear} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontWeight: 700 }}>مسح السجل</button>
+        </div>
+
+        {logs.length === 0 ? (
+          <div style={{ padding: 16, background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 12, textAlign: 'center' }}>
+            لا توجد عناصر في السجل بعد.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+            {logs.map((item, idx) => (
+              <div key={idx} style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 12, padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontWeight: 800, color: theme.accent }}>{item.caseName || 'قضية'}</span>
+                  <span style={{ opacity: 0.8 }}>{item.type.toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.9 }}>الصفة: {item.partyRole || '-'}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>التاريخ: {new Date(item.date).toLocaleString('ar-EG')}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6, direction: 'ltr' }}>{item.filename}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+

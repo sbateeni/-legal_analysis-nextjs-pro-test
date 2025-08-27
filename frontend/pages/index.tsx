@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { mapApiErrorToMessage, extractApiError } from '../utils/errors';
 import { saveApiKey, loadApiKey, addCase, getAllCases, updateCase, clearAllCases, LegalCase } from '../utils/db';
 import { set as idbSet } from 'idb-keyval';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import ArticleCard from '../components/ArticleCard';
+import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
 
 
 // تعريف نوع BeforeInstallPromptEvent
@@ -159,7 +161,9 @@ export default function Home() {
           setStageResults(arr => arr.map((v, i) => i === idx ? data.analysis : v));
           setTimeout(() => setStageShowResult(arr => arr.map((v, i) => i === idx ? true : v)), 100);
         } else {
-          setStageErrors(arr => arr.map((v, i) => i === idx ? (data.error || 'حدث خطأ أثناء توليد العريضة النهائية') : v));
+          const { code, message } = extractApiError(res, data);
+          const mapped = mapApiErrorToMessage(code, message || data.error);
+          setStageErrors(arr => arr.map((v, i) => i === idx ? (mapped || 'حدث خطأ أثناء توليد العريضة النهائية') : v));
         }
       } catch {
         setStageErrors(arr => arr.map((v, i) => i === idx ? 'تعذر الاتصال بالخادم' : v));
@@ -228,11 +232,11 @@ export default function Home() {
         });
         }
       } else {
-        if (data.error && data.error.includes('429')) {
-          setStageErrors(arr => arr.map((v, i) => i === idx ? 'لقد تجاوزت الحد المسموح به لعدد الطلبات على خدمة Gemini API. يرجى الانتظار دقيقة ثم إعادة المحاولة. إذا تكررت المشكلة، استخدم مفتاح API آخر أو راجع إعدادات حسابك في Google AI Studio.' : v));
-        } else {
-          setStageErrors(arr => arr.map((v, i) => i === idx ? (data.error || 'حدث خطأ أثناء التحليل') : v));
-        }
+        const { code, message } = extractApiError(res, data);
+        const mapped = code === 'RATE_LIMIT_EXCEEDED'
+          ? 'لقد تجاوزت الحد المسموح به لعدد الطلبات على خدمة Gemini API. يرجى الانتظار دقيقة ثم إعادة المحاولة.'
+          : mapApiErrorToMessage(code, message || data.error);
+        setStageErrors(arr => arr.map((v, i) => i === idx ? (mapped || 'حدث خطأ أثناء التحليل') : v));
       }
     } catch {
       setStageErrors(arr => arr.map((v, i) => i === idx ? 'تعذر الاتصال بالخادم' : v));
@@ -661,6 +665,37 @@ export default function Home() {
                 }}>
                   <div style={{fontSize: isMobile() ? 24 : 32, fontWeight: 900, color: theme.accent, marginBottom: 16}}>
                     📊 ملخص النتائج
+                  </div>
+
+                  {/* أزرار التصدير */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                    <button
+                      onClick={() => {
+                        const stages = stageResults
+                          .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
+                          .filter(Boolean) as { title: string; content: string }[];
+                        if (stages.length === 0) return;
+                        exportResultsToPDF(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
+                      }}
+                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}
+                    >
+                      ⬇️ تصدير PDF
+                    </button>
+                    <button
+                      onClick={() => {
+                        const stages = stageResults
+                          .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
+                          .filter(Boolean) as { title: string; content: string }[];
+                        if (stages.length === 0) return;
+                        exportResultsToDocx(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
+                      }}
+                      style={{ background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 14px', cursor: 'pointer', fontWeight: 700 }}
+                    >
+                      ⬇️ تصدير Docx
+                    </button>
+                    <Link href="/exports" style={{ background: '#22c55e', color: '#fff', borderRadius: 8, padding: '10px 14px', fontWeight: 700, textDecoration: 'none' }}>
+                      📚 سجل التصدير
+                    </Link>
                   </div>
                   
                   {/* عرض إحصائيات سريعة */}
