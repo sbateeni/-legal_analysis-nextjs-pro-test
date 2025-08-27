@@ -11,7 +11,9 @@ type ArticleCardProps = {
 };
 
 export default function ArticleCard({ imageUrl, title, excerpt, likes = 0, comments = 0, href }: ArticleCardProps) {
-  const Wrapper: React.ComponentType<any> = href ? (props: any) => <a {...props} href={href} /> : (props: any) => <div {...props} />;
+  const Wrapper = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    href ? <a className={className} href={href}>{children}</a> : <div className={className}>{children}</div>
+  );
   return (
     <Wrapper className="article-card fade-in">
       <div className="article-card__image">
