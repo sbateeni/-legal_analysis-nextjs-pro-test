@@ -53,88 +53,40 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: theme.background,
-      color: theme.text,
-      fontFamily: 'Tajawal, Arial, sans-serif'
-    }}>
+    <div style={{ minHeight: '100vh', background: theme.background, color: theme.text, fontFamily: 'Tajawal, Arial, sans-serif' }}>
       {/* Header */}
-      <header style={{
-        background: theme.accent2,
-        color: 'white',
-        padding: isMobile() ? '1rem' : '1.5rem',
-        textAlign: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: isMobile() ? '1.5rem' : '2rem',
-          fontWeight: 'bold'
-        }}>
+      <header style={{ background: theme.accent2, color: 'white', padding: isMobile() ? '1rem' : '1.5rem', textAlign: 'center' }}>
+        <h1 style={{ margin: 0 }}>
           📊 التحليلات والإحصائيات
         </h1>
-        <p style={{
-          margin: '0.5rem 0 0 0',
-          opacity: 0.9,
-          fontSize: isMobile() ? '0.9rem' : '1rem'
-        }}>
+        <p className="muted" style={{ margin: '0.5rem 0 0 0' }}>
           نظرة شاملة على جميع القضايا والتحليلات
         </p>
       </header>
 
       {/* Main Content */}
-      <main style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: isMobile() ? '1rem' : '2rem'
-      }}>
+      <main className="container" style={{ padding: isMobile() ? '1rem' : '2rem' }}>
         {loading && (
-          <div style={{
-            textAlign: 'center',
-            padding: '3rem',
-            color: '#6b7280'
-          }}>
+          <div className="text-center muted" style={{ padding: '3rem' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
             <h3>جاري تحليل البيانات...</h3>
           </div>
         )}
 
         {error && (
-          <div style={{
-            padding: '1rem',
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            borderRadius: '0.5rem',
-            marginBottom: '1rem'
-          }}>
+          <div className="card-panel" style={{ padding: '1rem', background: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>
             ❌ {error}
           </div>
         )}
 
         {analytics && analytics.totalCases === 0 && analytics.note && (
-          <div style={{
-            background: '#fef3c7',
-            border: '1px solid #fbbf24',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            textAlign: 'center',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="card-panel" style={{ background: '#fef3c7', borderColor: '#fbbf24', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
             <h3 style={{ color: '#92400e', marginBottom: '1rem' }}>لا توجد بيانات للتحليل حالياً</h3>
             <p style={{ color: '#92400e', marginBottom: '1rem' }}>
               {analytics.note}
             </p>
-            <div style={{
-              background: '#fbbf24',
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              display: 'inline-block',
-              fontWeight: 'bold'
-            }}>
+            <div className="badge" style={{ background: '#fbbf24', color: '#fff' }}>
               💡 نصيحة: أنشئ قضية جديدة من الصفحة الرئيسية لرؤية التحليلات
             </div>
           </div>
@@ -143,11 +95,7 @@ export default function AnalyticsPage() {
         {analytics && analytics.totalCases > 0 && (
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             {/* الإحصائيات الأساسية */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile() ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem'
-            }}>
+            <div className="grid-auto">
               <div style={{
                 background: 'white',
                 padding: '1.5rem',
@@ -206,12 +154,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* أنواع القضايا */}
-            <div style={{
-              background: 'white',
-              padding: '1.5rem',
-              borderRadius: '0.75rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
+            <div className="card-panel" style={{ background: 'white' }}>
               <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>أنواع القضايا</h2>
               <div style={{
                 display: 'grid',
@@ -237,12 +180,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* النشاط الأخير */}
-            <div style={{
-              background: 'white',
-              padding: '1.5rem',
-              borderRadius: '0.75rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
+            <div className="card-panel" style={{ background: 'white' }}>
               <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>النشاط الأخير</h2>
               <div style={{
                 display: 'grid',
@@ -272,12 +210,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* المراحل الأكثر استخداماً */}
-            <div style={{
-              background: 'white',
-              padding: '1.5rem',
-              borderRadius: '0.75rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
+            <div className="card-panel" style={{ background: 'white' }}>
               <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>المراحل الأكثر استخداماً</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {analytics.topStages.map(({ stage, count }) => (
@@ -304,12 +237,7 @@ export default function AnalyticsPage() {
 
             {/* المشاكل الشائعة */}
             {analytics.mostCommonIssues.length > 0 && (
-              <div style={{
-                background: 'white',
-                padding: '1.5rem',
-                borderRadius: '0.75rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-              }}>
+              <div className="card-panel" style={{ background: 'white' }}>
                 <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>المشاكل الشائعة</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {analytics.mostCommonIssues.map((issue, index) => (

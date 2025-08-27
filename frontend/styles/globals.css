@@ -374,6 +374,21 @@ a:hover {
   color: var(--accent);
 }
 
+/* كتل عامة */
+.container { max-width: 1200px; margin: 0 auto; }
+.p-1 { padding: 1rem; }
+.p-2 { padding: 2rem; }
+.text-center { text-align: center; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+.card-panel { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; }
+.muted { color: #6b7280; }
+.badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; }
+.badge-blue { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
 /* تحسينات للأجهزة المحمولة */
 @media (max-width: 768px) {
   .mobile-optimized {
