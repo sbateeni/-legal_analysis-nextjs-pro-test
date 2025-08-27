@@ -9,14 +9,6 @@ interface AnalysisStage {
   date: string;
 }
 
-interface LegalCase {
-  id: string;
-  name: string;
-  createdAt: string;
-  stages: AnalysisStage[];
-  tags?: string[];
-}
-
 interface AnalyticsData {
   totalCases: number;
   casesByType: Record<string, number>;
@@ -28,25 +20,6 @@ interface AnalyticsData {
   topStages: Array<{ stage: string; count: number }>;
   recentActivity: Array<{ date: string; count: number }>;
   note?: string;
-}
-
-// دالة تحديد نوع القضية
-function determineCaseType(text: string): string {
-  if (!text || typeof text !== 'string') return 'قضية مدنية عامة';
-  
-  if (/ميراث|ورثة|إرث/i.test(text)) return 'قضية ميراث';
-  if (/طلاق|زواج|أحوال شخصية/i.test(text)) return 'قضية أحوال شخصية';
-  if (/عقد|تجاري|شركة|عمل/i.test(text)) return 'قضية تجارية';
-  if (/عقوبة|جريمة|جنحة/i.test(text)) return 'قضية جنائية';
-  if (/أرض|عقار|ملكية/i.test(text)) return 'قضية عقارية';
-  if (/عمل|موظف|راتب/i.test(text)) return 'قضية عمل';
-  return 'قضية مدنية عامة';
-}
-
-// دالة حساب طول النص
-function calculateTextLength(text: string): number {
-  if (!text || typeof text !== 'string') return 0;
-  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 }
 
 // دالة محاكاة جلب البيانات (لأن IndexedDB لا يعمل على الخادم)

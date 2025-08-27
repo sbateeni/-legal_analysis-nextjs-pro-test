@@ -3,6 +3,7 @@ import Header from './Header';
 import MobileNav from './MobileNav';
 import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
+import Image from 'next/image';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
@@ -26,9 +27,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             overflow: 'hidden',
             borderBottom: `1px solid ${theme.border}`
           }}>
-            <img
+            <Image
               src="/DeWatermark.ai_1756309976798.jpeg"
               alt="بانر قانوني"
+              width={1200}
+              height={120}
               style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
             />
           </div>

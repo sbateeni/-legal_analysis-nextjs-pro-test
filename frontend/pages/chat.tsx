@@ -64,7 +64,6 @@ export default function ChatPage() {
     } catch {
       setMessages([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCaseId]);
 
   // Persist messages per selected case
@@ -75,7 +74,6 @@ export default function ChatPage() {
     } catch {
       // ignore storage errors
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, selectedCaseId]);
 
   const scrollToBottom = () => {
@@ -177,12 +175,6 @@ export default function ChatPage() {
       sendMessage();
     }
   };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputMessage(suggestion);
-  };
-
-
 
   const handleStop = () => {
     try { controllerRef.current?.abort(); } catch {}

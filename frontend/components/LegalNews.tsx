@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import Image from 'next/image';
 
 type Props = {
   apiKey: string;
@@ -39,7 +40,6 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
     if (!apiKey) return;
     // عند التحميل: نحاول فقط قراءة الكاش بدون توليد
     fetchNews(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey, model]);
 
   if (!apiKey) return null;
@@ -47,9 +47,11 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
   return (
     <section className="fade-in-up" style={{ marginBottom: 24 }}>
       <div style={{ marginBottom: 12 }}>
-        <img
+        <Image
           src={imgSrc}
           alt="أخبار قانونية"
+          width={800}
+          height={400}
           style={{
             width: '100%',
             height: 'auto',

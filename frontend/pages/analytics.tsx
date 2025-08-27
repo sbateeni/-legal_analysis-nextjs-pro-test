@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAllCases } from '../utils/db';
+import Link from 'next/link';
 
 interface AnalysisStage {
   id: string;
@@ -204,7 +205,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedCase]);
+  }, [selectedCase, fetchAnalytics]);
 
   // دالة تغيير القضية المختارة
   const handleCaseChange = (caseId: string) => {
@@ -346,12 +347,12 @@ export default function AnalyticsPage() {
               {analytics.note}
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="/" className="btn btn-info" style={{ background: theme.accent2, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
+              <Link href="/" className="btn btn-info" style={{ background: theme.accent2, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
                 🏠 الذهاب للصفحة الرئيسية
-              </a>
-              <a href="/chat" className="btn btn-info" style={{ background: theme.accent, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
+              </Link>
+              <Link href="/chat" className="btn btn-info" style={{ background: theme.accent, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
                 🤖 بدء محادثة جديدة
-              </a>
+              </Link>
             </div>
             <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fef3c7', borderRadius: '0.5rem', border: '1px solid #f59e0b' }}>
               <h4 style={{ color: '#92400e', margin: '0 0 0.5rem 0' }}>💡 ما يمكنك رؤيته في التحليلات:</h4>
