@@ -38,22 +38,22 @@ export default function ExportsPage() {
     <div style={{ minHeight: '100vh', background: theme.background, color: theme.text, fontFamily: 'Tajawal, Arial, sans-serif' }}>
       <header style={{ background: theme.accent2, color: '#fff', padding: '1rem', textAlign: 'center' }}>
         <h1 style={{ margin: 0 }}>سجل التصدير</h1>
-        <p style={{ margin: '0.25rem 0 0 0', opacity: 0.9 }}>آخر ملفات PDF/Docx التي قمت بتصديرها</p>
+        <p className="muted" style={{ margin: '0.25rem 0 0 0' }}>آخر ملفات PDF/Docx التي قمت بتصديرها</p>
       </header>
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '1rem' }}>
+      <main className="container p-1">
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button onClick={load} className="btn btn-info" style={{ background: theme.accent }}>تحديث</button>
           <button onClick={clear} className="btn btn-danger">مسح السجل</button>
         </div>
 
         {logs.length === 0 ? (
-          <div style={{ padding: 16, background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 12, textAlign: 'center' }}>
+          <div className="card-panel text-center" style={{ padding: 16, background: theme.card, borderColor: theme.border }}>
             لا توجد عناصر في السجل بعد.
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             {logs.map((item, idx) => (
-              <div key={idx} style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 12, padding: 16 }}>
+              <div key={idx} className="card-panel" style={{ background: theme.card, borderColor: theme.border, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontWeight: 800, color: theme.accent }}>{item.caseName || 'قضية'}</span>
                   <span style={{ opacity: 0.8 }}>{item.type.toUpperCase()}</span>

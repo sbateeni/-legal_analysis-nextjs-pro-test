@@ -25,10 +25,12 @@ const nextConfig: NextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-            process.env.NODE_ENV === 'production'
+            process.env.STRICT_CSP === '1'
               ? "script-src 'self'"
-              : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-            "style-src 'self' 'unsafe-inline'",
+              : (process.env.NODE_ENV === 'production' ? "script-src 'self'" : "script-src 'self' 'unsafe-inline' 'unsafe-eval'"),
+            process.env.STRICT_CSP === '1'
+              ? "style-src 'self'"
+              : "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob: https:",
             "font-src 'self' data:",
             "connect-src 'self' https://generativelanguage.googleapis.com",

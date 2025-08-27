@@ -8,9 +8,10 @@ function generateSiteMap(baseUrl: string) {
 }
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
-  const proto = (req.headers['x-forwarded-proto'] as string) || 'http';
-  const baseUrl = `${proto}://${host}`;
+  const envSite = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const forwardedHost = (req.headers?.['x-forwarded-host'] as string) || (req.headers?.host as string) || '';
+  const forwardedProto = (req.headers?.['x-forwarded-proto'] as string) || '';
+  const baseUrl = forwardedHost ? `${forwardedProto || 'https'}://${forwardedHost}` : envSite;
   const xml = generateSiteMap(baseUrl);
   res.setHeader('Content-Type', 'application/xml');
   res.write(xml);
