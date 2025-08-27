@@ -66,8 +66,10 @@ function getMockAnalyticsData(): AnalyticsData {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // دعم GET و POST methods
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
@@ -75,12 +77,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // في التطبيق الحقيقي، يمكن استخدام قاعدة بيانات حقيقية مثل PostgreSQL أو MongoDB
     const analyticsData = getMockAnalyticsData();
 
-    return res.status(200).json(analyticsData);
+    res.status(200).json(analyticsData);
 
   } catch (error: unknown) {
     console.error('Error in analytics API:', error);
     const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
-    return res.status(500).json({
+    res.status(500).json({
       code: 'ANALYTICS_ERROR',
       message: 'حدث خطأ في تحليل البيانات',
       details: errorMessage

@@ -53,7 +53,7 @@ function calculateTextLength(text: string): number {
 }
 
 // دالة تحليل البيانات
-function analyzeCases(cases: LegalCase[]): AnalyticsData {
+function analyzeCases(cases: LegalCase[], isSingleCase: boolean = false): AnalyticsData {
   if (!cases || cases.length === 0) {
     return {
       totalCases: 0,
@@ -65,7 +65,9 @@ function analyzeCases(cases: LegalCase[]): AnalyticsData {
       averageCaseLength: 0,
       topStages: [],
       recentActivity: [],
-      note: 'لم يتم إنشاء أي قضايا بعد. ابدأ بإنشاء قضية جديدة من الصفحة الرئيسية لرؤية التحليلات والإحصائيات.'
+      note: isSingleCase 
+        ? 'القضية المختارة لا تحتوي على بيانات كافية للتحليل.'
+        : 'لم يتم إنشاء أي قضايا بعد. ابدأ بإنشاء قضية جديدة من الصفحة الرئيسية لرؤية التحليلات والإحصائيات.'
     };
   }
 
@@ -183,11 +185,12 @@ export default function AnalyticsPage() {
       
       // تحليل البيانات حسب الاختيار
       let casesToAnalyze = allCases;
-      if (selectedCase !== 'all') {
+      const isSingleCase = selectedCase !== 'all';
+      if (isSingleCase) {
         casesToAnalyze = allCases.filter(c => c.id === selectedCase);
       }
       
-      const analyticsData = analyzeCases(casesToAnalyze);
+      const analyticsData = analyzeCases(casesToAnalyze, isSingleCase);
       setAnalytics(analyticsData);
       
     } catch (err: unknown) {
@@ -228,7 +231,7 @@ export default function AnalyticsPage() {
               📊 التحليلات والإحصائيات
             </h1>
             <p className="muted" style={{ margin: '0.5rem 0 0 0' }}>
-              نظرة شاملة على جميع القضايا والتحليلات
+              {selectedCase === 'all' ? 'نظرة شاملة على جميع القضايا' : 'تحليل قضية محددة'}
             </p>
           </div>
           <div style={{ flex: 1, textAlign: 'left' }}>
@@ -250,6 +253,58 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </header>
+
+      {/* قائمة اختيار القضايا */}
+      {cases.length > 0 && (
+        <div style={{ 
+          background: theme.card, 
+          padding: '1rem', 
+          borderBottom: `1px solid ${theme.border}`,
+          boxShadow: `0 2px 4px ${theme.shadow}`
+        }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <label style={{ fontWeight: 600, color: theme.accent2, fontSize: '0.9rem' }}>
+              اختر القضية:
+            </label>
+            <select 
+              value={selectedCase}
+              onChange={(e) => handleCaseChange(e.target.value)}
+              style={{
+                padding: '0.5rem 1rem',
+                border: `1px solid ${theme.border}`,
+                borderRadius: '0.5rem',
+                background: theme.card,
+                color: theme.text,
+                fontSize: '0.9rem',
+                minWidth: '200px'
+              }}
+            >
+              <option value="all">📊 جميع القضايا (إحصائيات عامة)</option>
+              {cases.map(caseItem => (
+                <option key={caseItem.id} value={caseItem.id}>
+                  📋 {caseItem.name} ({caseItem.stages.length} مرحلة)
+                </option>
+              ))}
+            </select>
+            {selectedCase !== 'all' && (
+              <button 
+                onClick={() => handleCaseChange('all')}
+                style={{
+                  background: theme.accent,
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                🔄 العودة للعامة
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container" style={{ padding: isMobile() ? '1rem' : '2rem' }}>
@@ -323,15 +378,21 @@ export default function AnalyticsPage() {
               marginBottom: '1.5rem',
               textAlign: 'center'
             }}>
-              <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>📈 ملخص سريع</h2>
+              <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>
+              {selectedCase === 'all' ? '📈 ملخص سريع' : '📋 تفاصيل القضية'}
+            </h2>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile() ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '1rem' }}>
                 <div>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{analytics.totalCases}</div>
-                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>إجمالي القضايا</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    {selectedCase === 'all' ? 'إجمالي القضايا' : 'عدد المراحل'}
+                  </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{analytics.successRate}%</div>
-                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>معدل النجاح</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    {selectedCase === 'all' ? 'معدل النجاح' : 'نسبة الإنجاز'}
+                  </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{analytics.averageStagesCompleted}%</div>
@@ -348,121 +409,128 @@ export default function AnalyticsPage() {
               {/* الإحصائيات الأساسية */}
               <div className="grid-auto">
                 <div style={{
-                  background: 'white',
+                  background: theme.card,
                   padding: '1.5rem',
                   borderRadius: '0.75rem',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  boxShadow: `0 1px 3px ${theme.shadow}`,
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📋</div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#1f2937' }}>إجمالي القضايا</h3>
+                  <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>إجمالي القضايا</h3>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold', color: theme.accent2 }}>
                     {analytics.totalCases}
                   </div>
                 </div>
 
                 <div style={{
-                  background: 'white',
+                  background: theme.card,
                   padding: '1.5rem',
                   borderRadius: '0.75rem',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  boxShadow: `0 1px 3px ${theme.shadow}`,
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📈</div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#1f2937' }}>معدل النجاح</h3>
+                  <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>معدل النجاح</h3>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
                     {analytics.successRate}%
                   </div>
                 </div>
 
                 <div style={{
-                  background: 'white',
+                  background: theme.card,
                   padding: '1.5rem',
                   borderRadius: '0.75rem',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  boxShadow: `0 1px 3px ${theme.shadow}`,
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#1f2937' }}>متوسط الإنجاز</h3>
+                  <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>متوسط الإنجاز</h3>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
                     {analytics.averageStagesCompleted}%
                   </div>
                 </div>
 
                 <div style={{
-                  background: 'white',
+                  background: theme.card,
                   padding: '1.5rem',
                   borderRadius: '0.75rem',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  boxShadow: `0 1px 3px ${theme.shadow}`,
                   textAlign: 'center'
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📝</div>
-                  <h3 style={{ margin: '0 0 0.5rem 0', color: '#1f2937' }}>متوسط الطول</h3>
+                  <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>متوسط الطول</h3>
                   <div style={{ fontSize: '2rem', fontWeight: 'bold', color: theme.accent }}>
                     {analytics.averageCaseLength} كلمة
                   </div>
                 </div>
               </div>
 
-              {/* أنواع القضايا */}
-              <div className="card-panel" style={{ background: 'white' }}>
-                <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>أنواع القضايا</h2>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile() ? '1fr' : 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: '1rem'
-                }}>
-                  {Object.entries(analytics.casesByType).map(([type, count]) => (
-                    <div key={type} style={{
-                      padding: '1rem',
-                      background: '#f8fafc',
-                      borderRadius: '0.5rem',
-                      textAlign: 'center'
-                    }}>
-                      <div style={{ fontWeight: 'bold', color: '#1f2937', marginBottom: '0.25rem' }}>
+              {/* أنواع القضايا - تظهر فقط في الإحصائيات العامة */}
+              {selectedCase === 'all' && (
+                <div className="card-panel" style={{ background: theme.card }}>
+                  <h2 style={{ margin: '0 0 1rem 0', color: theme.text }}>أنواع القضايا</h2>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile() ? '1fr' : 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gap: '1rem'
+                  }}>
+                    {Object.entries(analytics.casesByType).map(([type, count]) => (
+                      <div key={type} style={{
+                        padding: '1rem',
+                        background: '#f8fafc',
+                        borderRadius: '0.5rem',
+                        textAlign: 'center'
+                      }}>
+                                              <div style={{ fontWeight: 'bold', color: theme.text, marginBottom: '0.25rem' }}>
                         {type}
                       </div>
-                      <div style={{ fontSize: '1.5rem', color: theme.accent2, fontWeight: 'bold' }}>
-                        {count}
+                        <div style={{ fontSize: '1.5rem', color: theme.accent2, fontWeight: 'bold' }}>
+                          {count}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* النشاط الأخير */}
-              <div className="card-panel" style={{ background: 'white' }}>
-                <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>النشاط الأخير</h2>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile() ? '1fr' : 'repeat(auto-fit, minmax(120px, 1fr))',
-                  gap: '0.5rem'
-                }}>
-                  {analytics.recentActivity.map(({ date, count }) => (
-                    <div key={date} style={{
-                      padding: '0.75rem',
-                      background: count > 0 ? '#e0e7ff' : '#f3f4f6',
-                      borderRadius: '0.5rem',
-                      textAlign: 'center'
-                    }}>
-                      <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                        {formatDate(date)}
-                      </div>
-                      <div style={{ 
-                        fontSize: '1.25rem', 
-                        fontWeight: 'bold',
-                        color: count > 0 ? theme.accent2 : '#9ca3af'
+              {/* النشاط الأخير - تظهر فقط في الإحصائيات العامة */}
+              {selectedCase === 'all' && (
+                <div className="card-panel" style={{ background: theme.card }}>
+                  <h2 style={{ margin: '0 0 1rem 0', color: theme.text }}>النشاط الأخير</h2>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile() ? '1fr' : 'repeat(auto-fit, minmax(120px, 1fr))',
+                    gap: '0.5rem'
+                  }}>
+                    {analytics.recentActivity.map(({ date, count }) => (
+                      <div key={date} style={{
+                        padding: '0.75rem',
+                        background: count > 0 ? theme.resultBg : theme.card,
+                        borderRadius: '0.5rem',
+                        textAlign: 'center',
+                        border: `1px solid ${theme.border}`
                       }}>
-                        {count}
+                        <div style={{ fontSize: '0.9rem', color: theme.text, opacity: 0.7, marginBottom: '0.25rem' }}>
+                          {formatDate(date)}
+                        </div>
+                        <div style={{ 
+                          fontSize: '1.25rem', 
+                          fontWeight: 'bold',
+                          color: count > 0 ? theme.accent2 : theme.text
+                        }}>
+                          {count}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* المراحل الأكثر استخداماً */}
-              <div className="card-panel" style={{ background: 'white' }}>
-                <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>المراحل الأكثر استخداماً</h2>
+              <div className="card-panel" style={{ background: theme.card }}>
+                <h2 style={{ margin: '0 0 1rem 0', color: theme.text }}>
+                  {selectedCase === 'all' ? 'المراحل الأكثر استخداماً' : 'مراحل القضية'}
+                </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {analytics.topStages.map(({ stage, count }) => (
                     <div key={stage} style={{
@@ -470,10 +538,11 @@ export default function AnalyticsPage() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '0.75rem',
-                      background: '#f8fafc',
-                      borderRadius: '0.5rem'
+                      background: theme.resultBg,
+                      borderRadius: '0.5rem',
+                      border: `1px solid ${theme.border}`
                     }}>
-                      <span style={{ fontWeight: '500', color: '#1f2937' }}>{stage}</span>
+                      <span style={{ fontWeight: '500', color: theme.text }}>{stage}</span>
                       <span style={{ 
                         fontSize: '1.1rem', 
                         fontWeight: 'bold',
@@ -488,8 +557,8 @@ export default function AnalyticsPage() {
 
               {/* المشاكل الشائعة */}
               {analytics.mostCommonIssues.length > 0 && (
-                <div className="card-panel" style={{ background: 'white' }}>
-                  <h2 style={{ margin: '0 0 1rem 0', color: '#1f2937' }}>المشاكل الشائعة</h2>
+                <div className="card-panel" style={{ background: theme.card }}>
+                  <h2 style={{ margin: '0 0 1rem 0', color: theme.text }}>المشاكل الشائعة</h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {analytics.mostCommonIssues.map((issue, index) => (
                       <div key={index} style={{

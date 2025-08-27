@@ -62,7 +62,8 @@ async function fetchSourceText(): Promise<string> {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
@@ -71,7 +72,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const force = String(req.query.force || '').toLowerCase() === '1';
 
     if (!apiKey) {
-      return res.status(400).json({ error: 'يرجى تزويد مفتاح Gemini API عبر x-api-key أو apiKey' });
+      res.status(400).json({ error: 'يرجى تزويد مفتاح Gemini API عبر x-api-key أو apiKey' });
+      return;
     }
 
     // Serve from cache when valid and not forced
@@ -82,11 +84,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         model: modelName,
         content: cached.content,
       };
-      return res.status(200).json(response);
+      res.status(200).json(response);
+      return;
     }
     // إذا لم يكن هناك كاش ولا يوجد طلب إجباري للتحديث، لا نقوم بالتوليد
     if (!force && !shouldUseCache(modelName)) {
-      return res.status(204).end();
+      res.status(204).end();
+      return;
     }
 
     // Fetch source and generate new content
@@ -106,10 +110,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       model: modelName,
       content,
     };
-    return res.status(200).json(response);
+    res.status(200).json(response);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
-    return res.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 }
 
