@@ -77,17 +77,17 @@ export default function Settings() {
 
   return (
     <div style={{ fontFamily: 'Tajawal, Arial, sans-serif', direction: 'rtl', minHeight: '100vh', background: theme.background, color: theme.text }}>
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem' }}>
-        <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:16}}>
+      <main className="fade-in-up" style={{ maxWidth: 900, margin: '0 auto', padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem' }}>
+        <div className="font-headline" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:16}}>
           <span style={{fontSize: isMobile()? 28:32}}>⚙️</span>
-          <h1 style={{margin:0, color: theme.accent}}>الإعدادات</h1>
+          <h1 className="headline-lg" style={{margin:0, color: theme.accent}}>الإعدادات</h1>
         </div>
 
         {/* بطاقة مفتاح API */}
         <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24, marginBottom: 16 }}>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+          <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>🔑</span>
-            <h2 style={{margin:0, color: theme.accent2, fontSize: isMobile()? 18:20}}>مفتاح Gemini API</h2>
+            <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>مفتاح Gemini API</h2>
           </div>
           <input
             type="password"
@@ -104,23 +104,23 @@ export default function Settings() {
 
         {/* بطاقة المظهر والخصوصية */}
         <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24, marginBottom: 16 }}>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+          <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>{darkMode ? '🌙' : '☀️'}</span>
-            <h2 style={{margin:0, color: theme.accent2, fontSize: isMobile()? 18:20}}>المظهر والخصوصية</h2>
+            <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>المظهر والخصوصية</h2>
           </div>
           <button onClick={() => setDarkMode(!darkMode)} style={{background: 'none', border:`1px solid ${theme.accent2}`, color: theme.accent2, borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>
             تبديل الوضع ({darkMode ? 'ليلي' : 'فاتح'})
           </button>
-          <p style={{marginTop:12, fontSize:14, lineHeight:1.8, background: '#f5f7ff', color:'#222', borderRadius: 10, padding: '10px 12px', border:`1px solid ${theme.border}`}}>
+          <p className="font-body" style={{marginTop:12, fontSize:14, lineHeight:1.8, background: '#f5f7ff', color:'#222', borderRadius: 10, padding: '10px 12px', border:`1px solid ${theme.border}`}}>
             🔒 جميع بياناتك (القضايا والمفاتيح) تحفظ محليًا على جهازك فقط ولا يتم رفعها إلى أي خادم.
           </p>
         </div>
 
         {/* بطاقة القضايا: تصدير/استيراد ومسح */}
         <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24 }}>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+          <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>📦</span>
-            <h2 style={{margin:0, color: theme.accent2, fontSize: isMobile()? 18:20}}>القضايا</h2>
+            <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>القضايا</h2>
           </div>
           <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
             <button onClick={handleExport} style={{background: theme.accent, color:'#fff', border:'none', borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>⬇️ تصدير القضايا</button>
