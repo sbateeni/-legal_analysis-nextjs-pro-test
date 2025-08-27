@@ -19,6 +19,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       transition: 'background 0.4s',
     }}>
       {showHeader && <Header />}
+      {!showHeader && (
+        <div>
+          <div style={{
+            width: '100%',
+            overflow: 'hidden',
+            borderBottom: `1px solid ${theme.border}`
+          }}>
+            <img
+              src="/DeWatermark.ai_1756309976798.jpeg"
+              alt="بانر قانوني"
+              style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '10px 0',
+            fontWeight: 800,
+            letterSpacing: 0.5,
+            fontSize: 18
+          }}>
+            <span style={{ fontSize: 22 }}>⚖️</span>
+            <span>منصة التحليل القانوني الذكي</span>
+          </div>
+        </div>
+      )}
       <main style={{ maxWidth: 1000, width: '100%', margin: '0 auto', padding: '2rem 1rem' }}>
         {children}
       </main>
