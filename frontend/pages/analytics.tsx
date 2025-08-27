@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAllCases } from '../utils/db';
@@ -176,7 +176,7 @@ export default function AnalyticsPage() {
   const [selectedCase, setSelectedCase] = useState<string>('all'); // 'all' أو ID القضية
   const [cases, setCases] = useState<LegalCase[]>([]);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       setError(''); // مسح الأخطاء السابقة
@@ -201,11 +201,11 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCase]);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [selectedCase, fetchAnalytics]);
+  }, [fetchAnalytics]);
 
   // دالة تغيير القضية المختارة
   const handleCaseChange = (caseId: string) => {
@@ -346,14 +346,14 @@ export default function AnalyticsPage() {
             <p style={{ color: '#92400e', marginBottom: '1.5rem' }}>
               {analytics.note}
             </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/" className="btn btn-info" style={{ background: theme.accent2, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
-                🏠 الذهاب للصفحة الرئيسية
-              </Link>
-              <Link href="/chat" className="btn btn-info" style={{ background: theme.accent, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
-                🤖 بدء محادثة جديدة
-              </Link>
-            </div>
+                          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link href="/" className="btn btn-info" style={{ background: theme.accent2, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
+                  🏠 الذهاب للصفحة الرئيسية
+                </Link>
+                <Link href="/chat" className="btn btn-info" style={{ background: theme.accent, color: 'white', textDecoration: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem' }}>
+                  🤖 بدء محادثة جديدة
+                </Link>
+              </div>
             <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fef3c7', borderRadius: '0.5rem', border: '1px solid #f59e0b' }}>
               <h4 style={{ color: '#92400e', margin: '0 0 0.5rem 0' }}>💡 ما يمكنك رؤيته في التحليلات:</h4>
               <ul style={{ color: '#92400e', textAlign: 'right', margin: 0, paddingRight: '1rem' }}>
