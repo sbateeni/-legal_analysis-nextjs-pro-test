@@ -1,4 +1,3 @@
-"use client";
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { Theme, lightTheme, darkTheme } from '../utils/theme';
