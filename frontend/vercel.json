@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -10,7 +16,7 @@
       "destination": "/$1"
     }
   ],
-  
+
   "headers": [
     {
       "source": "/(.*)",
@@ -30,20 +36,8 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
         }
       ]
     }
-  ],
-  
-  "functions": {
-    "pages/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  
-  "regions": ["iad1"]
+  ]
 } 

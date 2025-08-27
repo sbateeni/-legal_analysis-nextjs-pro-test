@@ -7,13 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/tajawal": "^5.2.6",
     "@google/generative-ai": "^0.6.0",
-    "@supabase/supabase-js": "^2.56.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@vercel/blob": "^1.1.1",
@@ -23,10 +24,9 @@
     "docx": "^8.5.0",
     "idb-keyval": "^6.2.2",
     "jsonwebtoken": "^9.0.2",
+    "@prisma/client": "^5.18.0",
     "jspdf": "^3.0.1",
-    "next": "^15.5.2",
-    "pg": "^8.11.5",
-    "@libsql/client": "^0.11.0",
+    "next": "^15.3.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zod": "^3.23.8"
@@ -37,13 +37,13 @@
     "@types/estree": "^1.0.8",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.11.30",
-    "@types/pg": "^8.15.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "sharp": "^0.34.3",
     "typescript": "^5",
+    "prisma": "^5.18.0",
     "vitest": "^3.2.4"
   }
 }

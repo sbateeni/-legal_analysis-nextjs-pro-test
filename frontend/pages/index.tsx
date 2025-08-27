@@ -1,969 +1,821 @@
-import { useState } from 'react'
-import Head from 'next/head'
-import { useRouter } from 'next/router'
-import { useTheme } from '../contexts/ThemeContext'
-import { isMobile } from '../utils/crypto'
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { saveApiKey, loadApiKey, addCase, getAllCases, updateCase, clearAllCases, LegalCase } from '../utils/db';
+import { set as idbSet } from 'idb-keyval';
+import { isMobile } from '../utils/crypto';
+import { useTheme } from '../contexts/ThemeContext';
+
+
+// تعريف نوع BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+const STAGES = [
+  'المرحلة الأولى: تحديد المشكلة القانونية',
+  'المرحلة الثانية: جمع المعلومات والوثائق',
+  'المرحلة الثالثة: تحليل النصوص القانونية',
+  'المرحلة الرابعة: تحديد القواعد القانونية المنطبقة',
+  'المرحلة الخامسة: تحليل السوابق القضائية',
+  'المرحلة السادسة: تحليل الفقه القانوني',
+  'المرحلة السابعة: تحليل الظروف الواقعية',
+  'المرحلة الثامنة: تحديد الحلول القانونية الممكنة',
+  'المرحلة التاسعة: تقييم الحلول القانونية',
+  'المرحلة العاشرة: اختيار الحل الأمثل',
+  'المرحلة الحادية عشرة: صياغة الحل القانوني',
+  'المرحلة الثانية عشرة: تقديم التوصيات',
+];
+
+const FINAL_STAGE = 'المرحلة الثالثة عشرة: العريضة القانونية النهائية';
+const ALL_STAGES = [...STAGES, FINAL_STAGE];
+
+type PartyRole = 'المشتكي' | 'المشتكى عليه' | 'المدعي' | 'المدعى عليه';
 
 export default function Home() {
-  const router = useRouter()
-  const { theme, darkMode } = useTheme()
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const { theme, darkMode } = useTheme();
+  const [apiKey, setApiKey] = useState('');
+  const [caseNameInput, setCaseNameInput] = useState('');
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [activeTab, setActiveTab] = useState<'input' | 'stages' | 'results'>('input');
+  const [mounted, setMounted] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const prevApiKey = useRef("");
 
-  // بيانات التسجيل
-  const [officeData, setOfficeData] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    email: '',
-    subscription_plan: 'free',
-    max_users: 5
-  })
-  const [adminData, setAdminData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    full_name: ''
-  })
-  const [registerStep, setRegisterStep] = useState<'office' | 'admin'>('office')
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setMessage('')
+  // لكل مرحلة: نص، نتيجة، تحميل، خطأ، إظهار نتيجة
+  const [mainText, setMainText] = useState('');
+  const [stageResults, setStageResults] = useState<(string|null)[]>(() => Array(ALL_STAGES.length).fill(null));
+  const [stageLoading, setStageLoading] = useState<boolean[]>(() => Array(ALL_STAGES.length).fill(false));
+  const [stageErrors, setStageErrors] = useState<(string|null)[]>(() => Array(ALL_STAGES.length).fill(null));
+  const [stageShowResult, setStageShowResult] = useState<boolean[]>(() => Array(ALL_STAGES.length).fill(false));
+  const [partyRole, setPartyRole] = useState<PartyRole | ''>('');
 
-    try {
-      // هنا سيتم إضافة منطق تسجيل الدخول
-      setMessage('تم تسجيل الدخول بنجاح! جاري التوجيه...')
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
-  }
-
-  const handleOfficeChange = (field: string, value: string | number) => {
-    setOfficeData(prev => ({ ...prev, [field]: value }))
+  useEffect(() => {
+    setMounted(true);
     
-    if (field === 'name') {
-      const slug = generateSlug(value as string)
-      setOfficeData(prev => ({ ...prev, slug }))
-    }
-  }
 
-  const handleOfficeSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!officeData.name || !officeData.slug || !officeData.email) {
-      setError('يرجى ملء جميع الحقول المطلوبة')
-      return
-    }
-    setRegisterStep('admin')
-    setError('')
-  }
 
-  const handleAdminSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (adminData.password !== adminData.confirmPassword) {
-      setError('كلمات المرور غير متطابقة')
-      return
+    // تحميل مفتاح API من قاعدة البيانات عند بدء التشغيل
+    loadApiKey().then(val => {
+      if (val) setApiKey(val);
+    });
+
+    // معالجة تثبيت التطبيق كتطبيق أيقونة
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // التحقق من وجود التطبيق مثبت
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallPrompt(false);
     }
 
-    if (adminData.password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
-      return
+    // مراقبة حجم الشاشة
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth <= 768);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
+
+  useEffect(() => {
+    // حفظ مفتاح API في قاعدة البيانات عند تغييره
+    if (apiKey) saveApiKey(apiKey);
+  }, [apiKey]);
+
+  // حفظ apiKey في Blob Storage عند تغييره
+  useEffect(() => {
+    if (apiKey && apiKey !== prevApiKey.current) {
+      prevApiKey.current = apiKey;
     }
+  }, [apiKey]);
 
-    setLoading(true)
-    setError('')
+  // دالة تثبيت التطبيق
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallPrompt(false);
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
+
+
+  // دالة بدء قضية جديدة
+  const handleNewCase = () => {
+    // مسح جميع البيانات الحالية
+    setMainText('');
+    setCaseNameInput('');
+    setStageResults(Array(ALL_STAGES.length).fill(null));
+    setStageLoading(Array(ALL_STAGES.length).fill(false));
+    setStageErrors(Array(ALL_STAGES.length).fill(null));
+    setStageShowResult(Array(ALL_STAGES.length).fill(false));
+    setPartyRole('');
+    setActiveTab('input');
+  };
+
+  // دالة تحليل مرحلة واحدة
+  const handleAnalyzeStage = async (idx: number) => {
+    // إذا كانت المرحلة الأخيرة (العريضة النهائية)
+    if (idx === ALL_STAGES.length - 1) {
+      setStageLoading(arr => arr.map((v, i) => i === idx ? true : v));
+      setStageErrors(arr => arr.map((v, i) => i === idx ? null : v));
+      setStageResults(arr => arr.map((v, i) => i === idx ? null : v));
+      setStageShowResult(arr => arr.map((v, i) => i === idx ? false : v));
+      if (!apiKey) {
+        setStageErrors(arr => arr.map((v, i) => i === idx ? 'يرجى إعداد مفتاح Gemini API من صفحة الإعدادات أولاً.' : v));
+        setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
+        return;
+      }
+      const summaries = stageResults.slice(0, idx).filter(r => !!r);
+      if (summaries.length === 0) {
+        setStageErrors(arr => arr.map((v, i) => i === idx ? 'يرجى تحليل المراحل أولاً قبل توليد العريضة النهائية.' : v));
+        setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
+        return;
+      }
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: mainText, stageIndex: -1, apiKey, previousSummaries: summaries, finalPetition: true, partyRole: partyRole || undefined }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setStageResults(arr => arr.map((v, i) => i === idx ? data.analysis : v));
+          setTimeout(() => setStageShowResult(arr => arr.map((v, i) => i === idx ? true : v)), 100);
+        } else {
+          setStageErrors(arr => arr.map((v, i) => i === idx ? (data.error || 'حدث خطأ أثناء توليد العريضة النهائية') : v));
+        }
+      } catch {
+        setStageErrors(arr => arr.map((v, i) => i === idx ? 'تعذر الاتصال بالخادم' : v));
+      } finally {
+        setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
+      }
+      return;
+    }
+    setStageLoading(arr => arr.map((v, i) => i === idx ? true : v));
+    setStageErrors(arr => arr.map((v, i) => i === idx ? null : v));
+    setStageResults(arr => arr.map((v, i) => i === idx ? null : v));
+    setStageShowResult(arr => arr.map((v, i) => i === idx ? false : v));
+    if (!apiKey) {
+      setStageErrors(arr => arr.map((v, i) => i === idx ? 'يرجى إعداد مفتاح Gemini API من صفحة الإعدادات أولاً.' : v));
+      setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
+      return;
+    }
+    const text = mainText;
+    if (!text.trim()) {
+      setStageErrors(arr => arr.map((v, i) => i === idx ? 'يرجى إدخال تفاصيل القضية.' : v));
+      setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
+      return;
+    }
+    // جمع ملخصات المراحل السابقة (النتائج غير الفارغة فقط)
+    let previousSummaries = stageResults.slice(0, idx).filter(r => !!r);
+    // حدود الطول (تقريبي: 8000 tokens ≈ 24,000 حرف)
+    const MAX_CHARS = 24000;
+    let totalLength = previousSummaries.reduce((acc, cur) => acc + (cur?.length || 0), 0);
+    // إذا تجاوز الطول، احذف أقدم النتائج حتى لا يتجاوز الحد
+    while (totalLength > MAX_CHARS && previousSummaries.length > 1) {
+      previousSummaries = previousSummaries.slice(1);
+      totalLength = previousSummaries.reduce((acc, cur) => acc + (cur?.length || 0), 0);
+    }
     try {
-      // هنا سيتم إضافة منطق إنشاء المكتب
-      setMessage('تم إنشاء المكتب بنجاح! جاري التوجيه...')
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء المكتب'
-      setError(errorMessage)
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, stageIndex: idx, apiKey, previousSummaries, partyRole: partyRole || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStageResults(arr => arr.map((v, i) => i === idx ? data.analysis : v));
+        setTimeout(() => setStageShowResult(arr => arr.map((v, i) => i === idx ? true : v)), 100);
+        // حفظ التحليل ضمن نفس القضية إن وُجدت، وإلا إنشاؤها
+        const caseName = caseNameInput.trim() ? caseNameInput.trim() : `قضية بدون اسم - ${Date.now()}`;
+        const newStage = {
+          id: `${idx}-${btoa(unescape(encodeURIComponent(text))).slice(0,8)}-${Date.now()}`,
+          stageIndex: idx,
+          stage: ALL_STAGES[idx],
+          input: text,
+          output: data.analysis,
+          date: new Date().toISOString(),
+        };
+        const allCases: LegalCase[] = await getAllCases();
+        const existing = allCases.find((c: LegalCase) => c.name === caseName);
+        if (existing) {
+          existing.stages.push(newStage);
+          await updateCase(existing);
+        } else {
+        const newCaseId = `${caseName}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+        await addCase({
+          id: newCaseId,
+          name: caseName,
+          createdAt: newStage.date,
+          stages: [newStage],
+        });
+        }
+      } else {
+        if (data.error && data.error.includes('429')) {
+          setStageErrors(arr => arr.map((v, i) => i === idx ? 'لقد تجاوزت الحد المسموح به لعدد الطلبات على خدمة Gemini API. يرجى الانتظار دقيقة ثم إعادة المحاولة. إذا تكررت المشكلة، استخدم مفتاح API آخر أو راجع إعدادات حسابك في Google AI Studio.' : v));
+        } else {
+          setStageErrors(arr => arr.map((v, i) => i === idx ? (data.error || 'حدث خطأ أثناء التحليل') : v));
+        }
+      }
+    } catch {
+      setStageErrors(arr => arr.map((v, i) => i === idx ? 'تعذر الاتصال بالخادم' : v));
     } finally {
-      setLoading(false)
+      setStageLoading(arr => arr.map((v, i) => i === idx ? false : v));
     }
-  }
+  };
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'خطة مجانية',
-      price: 0,
-      max_users: 5,
-      features: ['5 مستخدمين', '100 قضية', 'قوالب أساسية', 'دعم أساسي']
-    },
-    {
-      id: 'professional',
-      name: 'خطة احترافية',
-      price: 99,
-      max_users: 20,
-      features: ['20 مستخدم', 'قضايا غير محدودة', 'قوالب متقدمة', 'دعم فني', 'تقارير متقدمة']
-    },
-    {
-      id: 'enterprise',
-      name: 'خطة المؤسسات',
-      price: 299,
-      max_users: 100,
-      features: ['100 مستخدم', 'ميزات متقدمة', 'دعم مخصص', 'API', 'تكامل مع أنظمة أخرى']
-    }
-  ]
+  if (!mounted) {
+    return null; // تجنب hydration mismatch
+  }
 
   return (
     <>
-      <Head>
-        <title>التحليل القانوني الذكي - SaaS</title>
-        <meta name="description" content="منصة SaaS متكاملة للمكاتب القانونية" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      
       <div style={{
         fontFamily: 'Tajawal, Arial, sans-serif',
         direction: 'rtl',
         minHeight: '100vh',
-        background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.card} 100%)`,
+        background: theme.background,
         color: theme.text,
         padding: 0,
         margin: 0,
         transition: 'background 0.4s',
       }}>
-        {/* Header بسيط */}
-        <div style={{
-          background: `${theme.card}cc`,
-          backdropFilter: 'blur(10px)',
-          borderBottom: `1px solid ${theme.border}`,
-          boxShadow: `0 2px 20px ${theme.shadow}`,
+        <main style={{
+          maxWidth: 800,
+          width: '100%',
+          margin: '0 auto',
+          padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem',
         }}>
+          {/* تنبيه إعداد المفتاح عند الحاجة */}
+          {!apiKey && (
+            <div style={{
+              background: '#fffbe6',
+              color: '#b7791f',
+              border: '1px solid #f6ad55',
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 16,
+              boxShadow: '0 1px 6px #b7791f22',
+              fontWeight: 700,
+              textAlign: 'center'
+            }}>
+              لم يتم إعداد مفتاح Gemini API بعد. انتقل إلى <Link href="/settings" style={{color: theme.accent, textDecoration:'underline'}}>الإعدادات</Link> لإعداده.
+            </div>
+          )}
+
+          {/* شريط إجراءات الصفحة */}
+          <div style={{display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center', marginBottom:16}}>
+              <button
+                onClick={handleNewCase}
+                style={{
+                  background: 'rgba(99, 102, 241, 0.1)', color: theme.accent2, border: `1px solid ${theme.accent2}`, borderRadius: 8,
+                  padding: isSmallScreen ? '8px 16px' : '6px 14px', fontWeight: 700, fontSize: isSmallScreen ? 14 : 16,
+                  cursor: 'pointer', boxShadow: `0 1px 4px ${theme.shadow}`, letterSpacing: 1, transition: 'all 0.2s',
+                  width: 'auto',
+                }}
+              >
+                🆕 قضية جديدة
+              </button>
+              {showInstallPrompt && (
+                <button
+                  onClick={handleInstallApp}
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.1)', color: '#0f766e', border: '1px solid #99f6e4', borderRadius: 8,
+                    padding: isSmallScreen ? '8px 16px' : '6px 14px', fontWeight: 700, fontSize: isSmallScreen ? 14 : 16,
+                    cursor: 'pointer', boxShadow: '0 1px 4px #0002', letterSpacing: 1, transition: 'all 0.2s',
+                    width: 'auto'
+                  }}
+                >
+                  📱 تثبيت التطبيق
+                </button>
+              )}
+            </div>
+
+          {/* نظام التبويبات */}
           <div style={{
-            maxWidth: 1200,
-            margin: '0 auto',
-            padding: '0 1rem',
+            background: theme.card,
+            borderRadius: 16,
+            boxShadow: `0 4px 20px ${theme.shadow}`,
+            marginBottom: 24,
+            border: `1.5px solid ${theme.border}`,
+            overflow: 'hidden',
           }}>
             <div style={{
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '1rem 0',
+              background: darkMode ? '#2a2d3e' : '#f8fafc',
+              borderBottom: `1px solid ${theme.border}`,
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-              }}>
-                <div style={{fontSize: '2rem'}}>⚖️</div>
-                <h1 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  color: theme.text,
-                }}>التحليل القانوني الذكي</h1>
-              </div>
-              <div style={{
-                display: 'flex',
-                gap: '1rem',
-              }}>
+              {[
+                { id: 'input', label: '📝 إدخال البيانات', icon: '✍️' },
+                { id: 'stages', label: '🔍 مراحل التحليل', icon: '⚖️' },
+                { id: 'results', label: '📊 النتائج', icon: '📈' }
+              ].map((tab) => (
                 <button
-                  onClick={() => setActiveTab('login')}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as 'input' | 'stages' | 'results')}
                   style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
+                    flex: 1,
+                    padding: isMobile() ? '12px 8px' : '16px 12px',
+                    background: activeTab === tab.id ? theme.accent : 'transparent',
+                    color: activeTab === tab.id ? '#fff' : theme.text,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: isMobile() ? 14 : 16,
                     fontWeight: 600,
-                    transition: 'all 0.2s',
-                    background: activeTab === 'login' ? theme.accent : 'transparent',
-                    color: activeTab === 'login' ? '#fff' : theme.text,
-                    border: `1px solid ${activeTab === 'login' ? theme.accent : theme.border}`,
-                  }}
-                >
-                  تسجيل الدخول
-                </button>
-                <button
-                  onClick={() => setActiveTab('register')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    background: activeTab === 'register' ? theme.accent2 : 'transparent',
-                    color: activeTab === 'register' ? '#fff' : theme.text,
-                    border: `1px solid ${activeTab === 'register' ? theme.accent2 : theme.border}`,
-                  }}
-                >
-                  إنشاء مكتب جديد
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* المحتوى الرئيسي */}
-        <div style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '3rem 1rem',
-        }}>
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '3rem',
-          }}>
-            <h2 style={{
-              fontSize: isMobile() ? '2.5rem' : '3.5rem',
-              fontWeight: 900,
-              color: theme.accent,
-              marginBottom: '1.5rem',
-              textShadow: `0 2px 10px ${theme.shadow}`,
-            }}>
-              منصة SaaS للمكاتب القانونية
-            </h2>
-            <p style={{
-              fontSize: '1.25rem',
-              color: theme.text,
-              maxWidth: '800px',
-              margin: '0 auto',
-              lineHeight: 1.6,
-              opacity: 0.9,
-            }}>
-              نظام متكامل لإدارة القضايا القانونية، المستخدمين، والقوالب مع حماية كاملة للخصوصية
-            </p>
-          </div>
-
-          {/* علامات التبويب */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '2rem',
-          }}>
-            <div style={{
-              background: theme.card,
-              borderRadius: '0.75rem',
-              boxShadow: `0 4px 20px ${theme.shadow}`,
-              padding: '0.25rem',
-              border: `1px solid ${theme.border}`,
-            }}>
-              <button
-                onClick={() => setActiveTab('login')}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  fontWeight: 600,
-                  transition: 'all 0.3s',
-                  background: activeTab === 'login' ? theme.accent : 'transparent',
-                  color: activeTab === 'login' ? '#fff' : theme.text,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                🔐 تسجيل الدخول
-              </button>
-              <button
-                onClick={() => setActiveTab('register')}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  fontWeight: 600,
-                  transition: 'all 0.3s',
-                  background: activeTab === 'register' ? theme.accent2 : 'transparent',
-                  color: activeTab === 'register' ? '#fff' : theme.text,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                🏢 إنشاء مكتب جديد
-              </button>
-            </div>
-          </div>
-
-          {/* نموذج تسجيل الدخول */}
-          {activeTab === 'login' && (
-            <div style={{
-              maxWidth: '500px',
-              margin: '0 auto',
-            }}>
-              <div style={{
-                background: theme.card,
-                borderRadius: '1rem',
-                boxShadow: `0 8px 32px ${theme.shadow}`,
-                padding: '2rem',
-                border: `1px solid ${theme.border}`,
-              }}>
-                <h3 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  color: theme.text,
-                  marginBottom: '1.5rem',
-                  textAlign: 'center',
-                }}>
-                  تسجيل الدخول
-                </h3>
-                
-                <form onSubmit={handleLogin} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      color: theme.text,
-                      marginBottom: '0.5rem',
-                    }}>
-                      البريد الإلكتروني
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        border: `2px solid ${theme.input}`,
-                        borderRadius: '0.5rem',
-                        fontSize: '1rem',
-                        background: darkMode ? '#1a1a2e' : '#fff',
-                        color: theme.text,
-                        outline: 'none',
-                        transition: 'all 0.2s',
-                        boxShadow: `0 2px 8px ${theme.shadow}`,
-                      }}
-                      placeholder="أدخل بريدك الإلكتروني"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      color: theme.text,
-                      marginBottom: '0.5rem',
-                    }}>
-                      كلمة المرور
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        border: `2px solid ${theme.input}`,
-                        borderRadius: '0.5rem',
-                        fontSize: '1rem',
-                        background: darkMode ? '#1a1a2e' : '#fff',
-                        color: theme.text,
-                        outline: 'none',
-                        transition: 'all 0.2s',
-                        boxShadow: `0 2px 8px ${theme.shadow}`,
-                      }}
-                      placeholder="أدخل كلمة المرور"
-                    />
-                  </div>
-
-                  {error && (
-                    <div style={{
-                      padding: '1rem',
-                      background: theme.errorBg,
-                      border: `1px solid ${theme.errorText}`,
-                      borderRadius: '0.5rem',
-                      color: theme.errorText,
-                      fontSize: '0.875rem',
-                      textAlign: 'center',
-                    }}>
-                      {error}
-                    </div>
-                  )}
-
-                  {message && (
-                    <div style={{
-                      padding: '1rem',
-                      background: '#dcfce7',
-                      border: '1px solid #16a34a',
-                      borderRadius: '0.5rem',
-                      color: '#16a34a',
-                      fontSize: '0.875rem',
-                      textAlign: 'center',
-                    }}>
-                      {message}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      background: theme.accent,
-                      color: '#fff',
-                      fontWeight: 700,
-                      padding: '0.75rem 1rem',
-                      borderRadius: '0.5rem',
-                      border: 'none',
-                      fontSize: '1rem',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      opacity: loading ? 0.7 : 1,
-                      boxShadow: `0 4px 16px ${theme.accent}33`,
-                    }}
-                  >
-                    {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
-                  </button>
-                </form>
-
-                <div style={{
-                  marginTop: '1.5rem',
-                  textAlign: 'center',
-                }}>
-                  <p style={{
-                    fontSize: '0.875rem',
-                    color: theme.text,
-                    opacity: 0.8,
-                  }}>
-                    ليس لديك حساب؟{' '}
-                    <button
-                      onClick={() => setActiveTab('register')}
-                      style={{
-                        color: theme.accent,
-                        fontWeight: 600,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textDecoration: 'underline',
-                      }}
-                    >
-                      إنشاء مكتب جديد
-                    </button>
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* نموذج إنشاء المكتب */}
-          {activeTab === 'register' && (
-            <div style={{
-              maxWidth: '800px',
-              margin: '0 auto',
-            }}>
-              <div style={{
-                background: theme.card,
-                borderRadius: '1rem',
-                boxShadow: `0 8px 32px ${theme.shadow}`,
-                padding: '2rem',
-                border: `1px solid ${theme.border}`,
-              }}>
-                <h3 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  color: theme.text,
-                  marginBottom: '1.5rem',
-                  textAlign: 'center',
-                }}>
-                  إنشاء مكتب قانوني جديد
-                </h3>
-
-                {/* خطوات التسجيل */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  marginBottom: '2rem',
-                }}>
-                  <div style={{
+                    transition: 'all 0.3s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem',
-                  }}>
-                    <div style={{
-                      width: '2.5rem',
-                      height: '2.5rem',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: registerStep === 'office' ? theme.accent2 : theme.border,
-                      color: registerStep === 'office' ? '#fff' : theme.text,
-                      fontWeight: 700,
-                    }}>
-                      1
-                    </div>
-                    <div style={{
-                      width: '0.5rem',
-                      height: '0.25rem',
-                      background: registerStep === 'admin' ? theme.accent2 : theme.border,
-                    }}></div>
-                    <div style={{
-                      width: '2.5rem',
-                      height: '2.5rem',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: registerStep === 'admin' ? theme.accent2 : theme.border,
-                      color: registerStep === 'admin' ? '#fff' : theme.text,
-                      fontWeight: 700,
-                    }}>
-                      2
-                    </div>
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span>{tab.icon}</span>
+                  <span style={{ display: isMobile() ? 'none' : 'inline' }}>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* محتوى التبويبات */}
+          {activeTab === 'input' && (
+            <>
+              {/* مربع نص واحد لتفاصيل القضية */}
+              <div style={{
+                background: theme.card,
+                borderRadius: 14,
+                boxShadow: `0 2px 12px ${theme.shadow}`,
+                padding: isMobile() ? 16 : 24,
+                marginBottom: 24,
+                border: `1.5px solid ${theme.border}`,
+              }}>
+                {/* مربع إدخال اسم القضية في رأس مربع التفاصيل */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
+                    <span style={{fontSize:20}}>📛</span>
+                    <label style={{ fontWeight: 700, color: theme.accent2, fontSize: 16 }}>اسم القضية:</label>
                   </div>
-                </div>
-
-                {registerStep === 'office' && (
-                  <form onSubmit={handleOfficeSubmit} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile() ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '1.5rem',
-                    }}>
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          اسم المكتب *
-                        </label>
-                        <input
-                          type="text"
-                          value={officeData.name}
-                          onChange={(e) => handleOfficeChange('name', e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="مكتب المحاماة"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          معرف المكتب *
-                        </label>
-                        <input
-                          type="text"
-                          value={officeData.slug}
-                          onChange={(e) => handleOfficeChange('slug', e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="office-name"
-                        />
-                        <p style={{
-                          fontSize: '0.75rem',
-                          color: theme.text,
-                          opacity: 0.7,
-                          marginTop: '0.25rem',
-                        }}>
-                          سيتم استخدامه في رابط المكتب
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        color: theme.text,
-                        marginBottom: '0.5rem',
-                      }}>
-                        وصف المكتب
-                      </label>
-                      <textarea
-                        value={officeData.description}
-                        onChange={(e) => handleOfficeChange('description', e.target.value)}
-                        rows={3}
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem 1rem',
-                          border: `2px solid ${theme.input}`,
-                          borderRadius: '0.5rem',
-                          fontSize: '1rem',
-                          background: darkMode ? '#1a1a2e' : '#fff',
-                          color: theme.text,
-                          outline: 'none',
-                          transition: 'all 0.2s',
-                          boxShadow: `0 2px 8px ${theme.shadow}`,
-                          resize: 'vertical',
+                  <input
+                        type="text"
+                        value={caseNameInput}
+                        onChange={e => setCaseNameInput(e.target.value)}
+                        placeholder="أدخل اسم القضية (مثال: قضية إيجار 2024)"
+                        style={{ 
+                          width: '100%', 
+                          borderRadius: 12, 
+                          border: `2px solid ${theme.input}`, 
+                          padding: isMobile() ? 12 : 16, 
+                          fontSize: isMobile() ? 16 : 18, 
+                          marginBottom: 0, 
+                          outline: 'none', 
+                          boxShadow: `0 2px 8px ${theme.shadow}`, 
+                          background: darkMode ? '#181a2a' : '#fff', 
+                          color: theme.text, 
+                          transition: 'all 0.3s ease',
+                          fontFamily: 'Tajawal, Arial, sans-serif'
                         }}
-                        placeholder="وصف مختصر عن المكتب..."
+                        required
                       />
                     </div>
-
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile() ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '1.5rem',
-                    }}>
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          البريد الإلكتروني *
-                        </label>
-                        <input
-                          type="email"
-                          value={officeData.email}
-                          onChange={(e) => handleOfficeChange('email', e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="office@example.com"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          خطة الاشتراك
-                        </label>
-                        <select
-                          value={officeData.subscription_plan}
-                          onChange={(e) => handleOfficeChange('subscription_plan', e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                        >
-                          {plans.map(plan => (
-                            <option key={plan.id} value={plan.id}>
-                              {plan.name} - {plan.price === 0 ? 'مجاناً' : `$${plan.price}/شهر`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    
+                    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
+                      <span style={{fontSize:20}}>👥</span>
+                      <label style={{ fontWeight: 700, color: theme.accent, fontSize: 16 }}>صفة المستخدم في الدعوى:</label>
                     </div>
+                    
+                    <div style={{
+                      background: theme.resultBg,
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 16,
+                      border: `1px solid ${theme.input}`,
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                      color: theme.text
+                    }}>
+                      <div style={{fontWeight: 700, color: theme.accent2, marginBottom: 8}}>📋 ملاحظة:</div>
+                      <div style={{marginBottom: 8}}><strong>المشتكي:</strong> <span style={{color: '#dc2626', fontWeight: 600}}>جزائية (جنائية)</span> - صاحب الشكوى ضد شخص ارتكب جريمة</div>
+                      <div style={{marginBottom: 8}}><strong>المشتكى عليه:</strong> <span style={{color: '#dc2626', fontWeight: 600}}>جزائية (جنائية)</span> - الشخص المتهم بارتكاب الجريمة في مرحلة التحقيق</div>
+                      <div style={{marginBottom: 8}}><strong>المدعي:</strong> <span style={{color: '#059669', fontWeight: 600}}>مدنية</span> - من يرفع دعوى للمطالبة بحق مادي أو معنوي</div>
+                      <div style={{marginBottom: 8}}><strong>المدعى عليه:</strong> <span style={{color: '#059669', fontWeight: 600}}>مدنية</span> - الطرف المخاصم الذي تُرفع عليه الدعوى</div>
+                      <div style={{fontSize: 13, opacity: 0.8, fontStyle: 'italic', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${theme.border}`}}>اختر صفتك ليتخصص التحليل والعريضة وفق مصلحتك في الدعوى</div>
+                    </div>
+                    
+                    <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom: 16 }}>
+                      {(['المشتكي','المشتكى عليه','المدعي','المدعى عليه'] as PartyRole[]).map(role => (
+                        <button key={role}
+                          onClick={() => setPartyRole(role === partyRole ? '' : role)}
+                          style={{
+                            background: role === partyRole ? theme.accent : 'transparent',
+                            color: role === partyRole ? '#fff' : theme.text,
+                            border: `2px solid ${theme.input}`,
+                            borderRadius: 10,
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            fontWeight: 700
+                          }}
+                        >{role}</button>
+                      ))}
+                    </div>
+                    
+                    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:12}}>
+                      <span style={{fontSize:20}}>📄</span>
+                      <label style={{ fontWeight: 700, color: theme.accent, fontSize: 16 }}>تفاصيل القضية:</label>
+                    </div>
+                    
+                    <textarea
+                      value={mainText}
+                      onChange={e => setMainText(e.target.value)}
+                      rows={6}
+                      style={{ 
+                        width: '100%', 
+                        borderRadius: 12, 
+                        border: `2px solid ${theme.input}`, 
+                        padding: isMobile() ? 12 : 16, 
+                        fontSize: isMobile() ? 16 : 18, 
+                        marginBottom: 0, 
+                        resize: 'vertical', 
+                        outline: 'none', 
+                        boxShadow: `0 2px 8px ${theme.shadow}`, 
+                        background: darkMode ? '#181a2a' : '#fff', 
+                        color: theme.text, 
+                        transition: 'all 0.3s ease',
+                        fontFamily: 'Tajawal, Arial, sans-serif',
+                        lineHeight: 1.6
+                      }}
+                      placeholder="أدخل تفاصيل القضية هنا..."
+                      required
+                    />
+                  </div>
 
-                    {error && (
-                      <div style={{
-                        padding: '1rem',
-                        background: theme.errorBg,
-                        border: `1px solid ${theme.errorText}`,
-                        borderRadius: '0.5rem',
-                        color: theme.errorText,
-                        textAlign: 'center',
-                      }}>
-                        {error}
-                      </div>
-                    )}
-
+                  {/* زر البدء السريع */}
+                  <div style={{
+                    background: `linear-gradient(135deg, ${theme.accent2} 0%, ${theme.accent} 100%)`,
+                    borderRadius: 16,
+                    padding: isMobile() ? 20 : 28,
+                    textAlign: 'center',
+                    boxShadow: `0 4px 20px ${theme.accent}33`,
+                    border: `1px solid ${theme.accent}`,
+                  }}>
+                    <div style={{fontSize: isMobile() ? 20 : 24, fontWeight: 800, color: '#fff', marginBottom: 12}}>
+                      🚀 جاهز للبدء؟
+                    </div>
+                    <div style={{fontSize: isMobile() ? 14 : 16, color: 'rgba(255,255,255,0.9)', marginBottom: 20, lineHeight: 1.6}}>
+                      بعد إدخال البيانات، انتقل إلى تبويب &quot;مراحل التحليل&quot; لبدء العملية
+                    </div>
                     <button
-                      type="submit"
+                      onClick={() => setActiveTab('stages')}
                       style={{
-                        width: '100%',
-                        background: theme.accent2,
-                        color: '#fff',
-                        fontWeight: 700,
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '0.5rem',
-                        border: 'none',
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: `0 4px 16px ${theme.accent2}33`,
+                        background: 'rgba(255,255,255,0.2)', 
+                        color: '#fff', 
+                        border: '2px solid rgba(255,255,255,0.3)', 
+                        borderRadius: 12, 
+                        padding: isMobile() ? '12px 24px' : '16px 32px', 
+                        fontSize: isMobile() ? 16 : 18, 
+                        fontWeight: 700, 
+                        cursor: 'pointer', 
+                        transition: 'all 0.3s ease',
+                        backdropFilter: 'blur(10px)',
                       }}
                     >
-                      التالي: إنشاء حساب المدير
+                      ⚖️ الانتقال لمراحل التحليل
                     </button>
-                  </form>
-                )}
+                  </div>
+                </>
+              )}
 
-                {registerStep === 'admin' && (
-                  <form onSubmit={handleAdminSubmit} style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile() ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '1.5rem',
+              {/* محتوى التبويب الثاني: مراحل التحليل */}
+              {activeTab === 'stages' && (
+                <>
+                  {/* عرض جميع المراحل */}
+                  {ALL_STAGES.map((stage, idx) => (
+                    <div key={stage} style={{
+                      background: theme.card,
+                      borderRadius: 16,
+                      boxShadow: `0 4px 20px ${theme.shadow}`,
+                      padding: isMobile() ? 16 : 24,
+                      marginBottom: 24,
+                      border: `1.5px solid ${theme.border}`,
+                      transition: 'all 0.3s ease',
                     }}>
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          الاسم الكامل *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={adminData.full_name}
-                          onChange={(e) => setAdminData(prev => ({ ...prev, full_name: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="اسم المدير الكامل"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          البريد الإلكتروني *
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={adminData.email}
-                          onChange={(e) => setAdminData(prev => ({ ...prev, email: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="admin@office.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile() ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '1.5rem',
-                    }}>
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          كلمة المرور *
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          value={adminData.password}
-                          onChange={(e) => setAdminData(prev => ({ ...prev, password: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="كلمة المرور"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label style={{
-                          display: 'block',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: theme.text,
-                          marginBottom: '0.5rem',
-                        }}>
-                          تأكيد كلمة المرور *
-                        </label>
-                        <input
-                          type="password"
-                          required
-                          value={adminData.confirmPassword}
-                          onChange={(e) => setAdminData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem',
-                            border: `2px solid ${theme.input}`,
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            background: darkMode ? '#1a1a2e' : '#fff',
-                            color: theme.text,
-                            outline: 'none',
-                            transition: 'all 0.2s',
-                            boxShadow: `0 2px 8px ${theme.shadow}`,
-                          }}
-                          placeholder="تأكيد كلمة المرور"
-                        />
-                      </div>
-                    </div>
-
-                    {error && (
-                      <div style={{
-                        padding: '1rem',
-                        background: theme.errorBg,
-                        border: `1px solid ${theme.errorText}`,
-                        borderRadius: '0.5rem',
-                        color: theme.errorText,
-                        textAlign: 'center',
+                      <div style={{ 
+                        fontWeight: 800, 
+                        color: theme.accent, 
+                        fontSize: isMobile() ? 16 : 18, 
+                        marginBottom: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
                       }}>
-                        {error}
+                        <span style={{fontSize: isMobile() ? 20 : 24}}>⚖️</span>
+                        {stage}
                       </div>
-                    )}
-
-                    <div style={{
-                      display: 'flex',
-                      gap: '1rem',
-                    }}>
+                      
+                      {/* ملخص التحليل السابق */}
+                      {idx > 0 && stageResults[idx-1] && (
+                        <div style={{
+                          background: theme.resultBg,
+                          borderRadius: 12,
+                          boxShadow: `0 2px 8px ${theme.shadow}`,
+                          padding: 16,
+                          marginBottom: 16,
+                          border: `1px solid ${theme.input}`,
+                          color: theme.text,
+                          fontSize: 15,
+                          opacity: 0.95,
+                        }}>
+                          <div style={{fontWeight: 700, color: theme.accent2, marginBottom: 8}}>📋 ملخص المرحلة السابقة:</div>
+                          <div style={{ whiteSpace: 'pre-line', marginTop: 4, lineHeight: 1.6 }}>{stageResults[idx-1]}</div>
+                        </div>
+                      )}
+                      
+                      {/* إذا كانت المرحلة الأخيرة، غير نص الزر */}
                       <button
                         type="button"
-                        onClick={() => setRegisterStep('office')}
-                        style={{
-                          flex: 1,
-                          background: theme.border,
-                          color: theme.text,
-                          fontWeight: 700,
-                          padding: '0.75rem 1.5rem',
-                          borderRadius: '0.5rem',
-                          border: 'none',
-                          fontSize: '1rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
+                        disabled={stageLoading[idx]}
+                        onClick={() => handleAnalyzeStage(idx)}
+                        style={{ 
+                          width: '100%', 
+                          background: `linear-gradient(135deg, ${theme.accent2} 0%, ${theme.accent} 100%)`, 
+                          color: '#fff', 
+                          border: 'none', 
+                          borderRadius: 12, 
+                          padding: isMobile() ? '14px 0' : '18px 0', 
+                          fontSize: isMobile() ? 16 : 18, 
+                          fontWeight: 800, 
+                          cursor: stageLoading[idx] ? 'not-allowed' : 'pointer', 
+                          marginTop: 8, 
+                          boxShadow: `0 4px 16px ${theme.accent}33`, 
+                          letterSpacing: 1, 
+                          transition: 'all 0.3s ease', 
+                          position:'relative',
+                          transform: stageLoading[idx] ? 'scale(0.98)' : 'scale(1)',
                         }}
                       >
-                        رجوع
+                        {stageLoading[idx] ? (
+                          <span style={{display:'inline-flex', alignItems:'center', gap:8}}>
+                            <span className="spinner" style={{display:'inline-block', width:20, height:20, border:'3px solid #fff', borderTop:`3px solid ${theme.accent2}`, borderRadius:'50%', animation:'spin 1s linear infinite', verticalAlign:'middle'}}></span>
+                            {idx === ALL_STAGES.length - 1 ? '⏳ جاري توليد العريضة النهائية...' : '⏳ جاري التحليل...'}
+                          </span>
+                        ) : (
+                          idx === ALL_STAGES.length - 1 ? '📜 توليد العريضة القانونية النهائية' : `📜 تحليل ${stage}`
+                        )}
                       </button>
                       
+                      {stageErrors[idx] && (
+                        <div style={{ 
+                          color: theme.errorText, 
+                          background: theme.errorBg, 
+                          borderRadius: 12, 
+                          padding: 16, 
+                          marginTop: 16, 
+                          textAlign: 'center', 
+                          fontWeight: 700, 
+                          fontSize: 15, 
+                          boxShadow: `0 2px 8px ${theme.errorText}22`,
+                          border: `1px solid ${theme.errorText}33`
+                        }}>
+                          ❌ {stageErrors[idx]}
+                        </div>
+                      )}
+                      
+                      {stageResults[idx] && (
+                        <div style={{
+                          background: theme.resultBg,
+                          borderRadius: 16,
+                          boxShadow: `0 4px 20px ${theme.shadow}`,
+                          padding: 20,
+                          marginTop: 20,
+                          border: `1.5px solid ${theme.input}`,
+                          color: theme.text,
+                          opacity: stageShowResult[idx] ? 1 : 0,
+                          transform: stageShowResult[idx] ? 'translateY(0)' : 'translateY(30px)',
+                          transition: 'all 0.7s ease',
+                        }}>
+                          <h3 style={{ color: theme.accent, marginBottom: 12, fontSize: 18, fontWeight: 800, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span>🔍</span>
+                            نتيجة التحليل
+                          </h3>
+                          <div style={{ whiteSpace: 'pre-line', fontSize: 16, lineHeight: 1.8 }}>{stageResults[idx]}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* محتوى التبويب الثالث: النتائج */}
+              {activeTab === 'results' && (
+                <div style={{
+                  background: theme.card,
+                  borderRadius: 16,
+                  boxShadow: `0 4px 20px ${theme.shadow}`,
+                  padding: isMobile() ? 20 : 32,
+                  border: `1.5px solid ${theme.border}`,
+                }}>
+                  <div style={{fontSize: isMobile() ? 24 : 32, fontWeight: 900, color: theme.accent, marginBottom: 16}}>
+                    📊 ملخص النتائج
+                  </div>
+                  
+                  {/* عرض إحصائيات سريعة */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile() ? '1fr' : 'repeat(3, 1fr)',
+                    gap: 16,
+                    marginBottom: 24,
+                  }}>
+                    <div style={{
+                      background: theme.resultBg,
+                      borderRadius: 12,
+                      padding: 16,
+                      border: `1px solid ${theme.border}`,
+                      textAlign: 'center',
+                    }}>
+                      <div style={{fontSize: 24, fontWeight: 800, color: theme.accent}}>
+                        {stageResults.filter(r => !!r).length}
+                      </div>
+                      <div style={{fontSize: 14, color: theme.text}}>مرحلة مكتملة</div>
+                    </div>
+                    <div style={{
+                      background: theme.resultBg,
+                      borderRadius: 12,
+                      padding: 16,
+                      border: `1px solid ${theme.border}`,
+                      textAlign: 'center',
+                    }}>
+                      <div style={{fontSize: 24, fontWeight: 800, color: theme.accent2}}>
+                        {ALL_STAGES.length - stageResults.filter(r => !!r).length}
+                      </div>
+                      <div style={{fontSize: 14, color: theme.text}}>مرحلة متبقية</div>
+                    </div>
+                    <div style={{
+                      background: theme.resultBg,
+                      borderRadius: 12,
+                      padding: 16,
+                      border: `1px solid ${theme.border}`,
+                      textAlign: 'center',
+                    }}>
+                      <div style={{fontSize: 24, fontWeight: 800, color: theme.accent}}>
+                        {Math.round((stageResults.filter(r => !!r).length / ALL_STAGES.length) * 100)}%
+                      </div>
+                      <div style={{fontSize: 14, color: theme.text}}>نسبة الإنجاز</div>
+                    </div>
+                  </div>
+
+                  {/* عرض النتائج الفعلية */}
+                  {stageResults.some(r => !!r) ? (
+                    <>
+                      <div style={{fontSize: isMobile() ? 16 : 18, color: theme.text, marginBottom: 24, lineHeight: 1.6, textAlign: 'center'}}>
+                        نتائج المراحل المكتملة
+                      </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isMobile() ? '1fr' : 'repeat(2, 1fr)',
+                        gap: 16,
+                      }}>
+                        {stageResults.map((result, idx) => result && (
+                          <div key={idx} style={{
+                            background: theme.resultBg,
+                            borderRadius: 12,
+                            padding: 16,
+                            border: `1px solid ${theme.border}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                          }}
+                          onClick={() => setActiveTab('stages')}
+                          title="انقر للانتقال إلى مراحل التحليل"
+                          >
+                            <div style={{fontWeight: 700, color: theme.accent2, marginBottom: 8, fontSize: 14}}>
+                              {ALL_STAGES[idx]}
+                            </div>
+                            <div style={{fontSize: 13, color: theme.text, lineHeight: 1.5}}>
+                              {result.substring(0, 120)}...
+                            </div>
+                            <div style={{
+                              fontSize: 11,
+                              color: theme.accent,
+                              marginTop: 8,
+                              textAlign: 'center',
+                              fontWeight: 600
+                            }}>
+                              انقر لعرض النتيجة كاملة
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{
+                      background: theme.resultBg,
+                      borderRadius: 12,
+                      padding: 32,
+                      border: `1px solid ${theme.border}`,
+                      textAlign: 'center',
+                      color: theme.text,
+                    }}>
+                      <div style={{fontSize: 48, marginBottom: 16}}>📝</div>
+                      <div style={{fontSize: 18, fontWeight: 700, marginBottom: 12}}>لا توجد نتائج بعد</div>
+                      <div style={{fontSize: 14, opacity: 0.8, marginBottom: 20}}>
+                        ابدأ بتحليل المراحل في تبويب &quot;مراحل التحليل&quot; لرؤية النتائج هنا
+                      </div>
                       <button
-                        type="submit"
-                        disabled={loading}
+                        onClick={() => setActiveTab('stages')}
                         style={{
-                          flex: 1,
-                          background: theme.accent2,
+                          background: theme.accent,
                           color: '#fff',
-                          fontWeight: 700,
-                          padding: '0.75rem 1.5rem',
-                          borderRadius: '0.5rem',
                           border: 'none',
-                          fontSize: '1rem',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                          opacity: loading ? 0.7 : 1,
-                          boxShadow: `0 4px 16px ${theme.accent2}33`,
+                          borderRadius: 8,
+                          padding: '12px 24px',
+                          fontSize: 16,
+                          fontWeight: 700,
+                          cursor: 'pointer',
                         }}
                       >
-                        {loading ? 'جاري الإنشاء...' : 'إنشاء المكتب'}
+                        الانتقال لمراحل التحليل
                       </button>
                     </div>
-                  </form>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <footer style={{
-          background: `${theme.card}cc`,
-          backdropFilter: 'blur(10px)',
-          borderTop: `1px solid ${theme.border}`,
-          marginTop: '5rem',
-          boxShadow: `0 -2px 20px ${theme.shadow}`,
+                  )}
+                </div>
+              )}
+        </main>
+        
+        {/* Footer محسن */}
+        <footer style={{ 
+          textAlign: 'center', 
+          color: '#888', 
+          marginTop: 48, 
+          fontSize: 15,
+          background: theme.card,
+          borderRadius: 16,
+          padding: isMobile() ? 20 : 32,
+          boxShadow: `0 4px 20px ${theme.shadow}`,
+          border: `1px solid ${theme.border}`,
+          margin: '48px auto 0',
+          maxWidth: 800,
+          width: '90%',
         }}>
+          <div style={{fontSize: 18, fontWeight: 700, color: theme.accent, marginBottom: 16}}>
+            &copy; {new Date().getFullYear()} منصة التحليل القانوني الذكي
+          </div>
           <div style={{
-            maxWidth: 1200,
-            margin: '0 auto',
-            padding: '2rem 1rem',
-            textAlign: 'center',
+            marginTop: 18, 
+            background: darkMode ? '#2a1a1a' : '#fffbe6', 
+            color: darkMode ? '#ffb6b6' : '#b7791f', 
+            borderRadius: 12, 
+            padding: '16px 20px', 
+            display: 'inline-block', 
+            fontWeight: 700, 
+            fontSize: 14, 
+            boxShadow: `0 2px 8px ${darkMode ? '#ff6b6b22' : '#b7791f22'}`,
+            border: `1px solid ${darkMode ? '#ff6b6b33' : '#b7791f33'}`,
+            maxWidth: '90%',
+            lineHeight: 1.6
           }}>
-            <div style={{
-              color: theme.text,
-              opacity: 0.8,
-            }}>
-              <p>&copy; 2024 التحليل القانوني الذكي. جميع الحقوق محفوظة.</p>
-            </div>
+            ⚠️ جميع بياناتك (القضايا والمفاتيح) تحفظ محليًا على جهازك فقط ولا يتم رفعها إلى أي خادم.
+            <button 
+              onClick={async () => { 
+                await clearAllCases(); 
+                await idbSet('legal_dark_mode', '0'); 
+                window.location.reload(); 
+              }} 
+              style={{
+                marginRight: 12, 
+                background: '#ff6b6b', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: 8, 
+                padding: '8px 18px', 
+                fontWeight: 800, 
+                fontSize: 14, 
+                cursor: 'pointer', 
+                boxShadow: '0 2px 8px #ff6b6b22', 
+                marginLeft: 8,
+                transition: 'all 0.3s ease'
+              }}
+            >
+              🗑️ مسح كل البيانات
+            </button>
           </div>
         </footer>
       </div>
+      <style>{`
+        @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+      `}</style>
     </>
-  )
+  );
 } 
