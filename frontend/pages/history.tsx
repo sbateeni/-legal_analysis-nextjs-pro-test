@@ -209,7 +209,7 @@ export default function History() {
       {mounted && (
         <>
           {/* شريط علوي - أزيل واستبدل بالهيدر العام من التخطيط */}
-      <main style={{
+      <main className="fade-in-up" style={{
         maxWidth: 950,
         width: '100%',
         margin: '0 auto',
@@ -226,9 +226,9 @@ export default function History() {
           <input type="text" value={tagFilter} onChange={e => setTagFilter(e.target.value)} placeholder="🏷️ فلترة بالوسم..." style={{minWidth:180, maxWidth:260, borderRadius:8, border:`1.5px solid ${theme.accent2}`, padding:'10px 14px', fontSize:15, outline:'none', background:darkMode?'#232946':'#fff', color:theme.text, boxShadow:'0 1px 4px #6366f122'}} />
         </div>
         {/* عرض القضايا */}
-        <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:18}}>
+        <div className="font-headline" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:18}}>
           <span style={{fontSize:32}}>📑</span>
-          <h1 style={{ color: theme.accent, fontWeight: 900, fontSize: 28, margin: 0, letterSpacing: 1 }}>قائمة القضايا</h1>
+          <h1 className="headline-lg" style={{ color: theme.accent, margin: 0 }}>قائمة القضايا</h1>
         </div>
         {cases.length === 0 ? (
           <div style={{textAlign:'center', color:theme.accent2, fontSize:18, marginTop:40, background:theme.card, borderRadius:12, padding:24, boxShadow:`0 1px 8px ${theme.shadow}`}}>لا يوجد قضايا محفوظة بعد.</div>
@@ -292,14 +292,14 @@ export default function History() {
           </div>
         ) : (
           // عرض القضايا في Grid متجاوب
-          <div style={{display:'grid', gridTemplateColumns: isMobile() ? '1fr' : '1fr 1fr 1fr', gap:24, justifyContent:'center'}}>
+          <div className="grid-responsive" style={{justifyContent:'center'}}>
             {cases
               .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
               .filter(c => !tagFilter.trim() || (c.tags||[]).some(t => t.toLowerCase().includes(tagFilter.toLowerCase())))
               .map(c => (
-              <div key={c.id} style={{background:theme.card, borderRadius:16, boxShadow:`0 2px 12px ${theme.shadow}`, border:`2px solid ${theme.accent2}`, padding:isMobile()?12:24, cursor:'pointer', transition:'box-shadow 0.2s, border 0.2s', position:'relative', minHeight:170, display:'flex', flexDirection:'column', justifyContent:'space-between'}} onClick={() => setSelectedCaseId(c.id)}>
+              <div key={c.id} className="article-card fade-in" style={{border:`2px solid ${theme.accent2}`, padding:isMobile()?12:24, cursor:'pointer', position:'relative', minHeight:170, display:'flex', flexDirection:'column', justifyContent:'space-between'}} onClick={() => setSelectedCaseId(c.id)}>
                 <div>
-                  <div style={{fontWeight:900, fontSize:22, color:theme.accent, marginBottom:8, textOverflow:'ellipsis', overflow:'hidden', whiteSpace:'nowrap'}}>{c.name}</div>
+                  <div className="headline-sm font-headline" style={{color:theme.accent, marginBottom:8, textOverflow:'ellipsis', overflow:'hidden', whiteSpace:'nowrap'}}>{c.name}</div>
                   <div style={{fontSize:14, color:'#888', marginBottom:10}}>تاريخ الإنشاء: {new Date(c.createdAt).toLocaleString('ar-EG')}</div>
                   <div style={{fontSize:15, color:theme.accent2, marginBottom:8}}>عدد المراحل: {c.stages.length}</div>
                   {!!(c.tags && c.tags.length) && (

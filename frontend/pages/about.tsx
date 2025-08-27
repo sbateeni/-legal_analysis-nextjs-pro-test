@@ -25,19 +25,19 @@ export default function About() {
   return (
     <div style={{ fontFamily: 'Tajawal, Arial, sans-serif', direction: 'rtl', minHeight: '100vh', background: theme.background, color: theme.text, padding: 0, margin: 0, transition: 'background 0.4s' }}>
       <main style={{ maxWidth: 700, margin: '0 auto', padding: isMobile() ? '1rem 0.5rem' : '2.5rem 1rem' }}>
-        <div style={{ background: theme.card, borderRadius: isMobile() ? 16 : 20, boxShadow: `0 2px 16px ${theme.shadow}`, padding: isMobile() ? 20 : 36, marginBottom: isMobile() ? 20 : 32, border: `1.5px solid ${theme.border}` }}>
+        <div className="fade-in-up" style={{ background: theme.card, borderRadius: isMobile() ? 16 : 20, boxShadow: `0 2px 16px ${theme.shadow}`, padding: isMobile() ? 20 : 36, marginBottom: isMobile() ? 20 : 32, border: `1.5px solid ${theme.border}` }}>
           <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap: isMobile() ? 8 : 10, marginBottom: isMobile() ? 14 : 18}}>
             <span style={{fontSize: isMobile() ? 28 : 36}}>⚖️</span>
-            <h1 style={{ color: theme.accent, fontWeight: 900, fontSize: isMobile() ? 24 : 32, margin: 0, letterSpacing: 1 }}>عن المنصة</h1>
+            <h1 className="headline-lg font-headline" style={{ color: theme.accent, margin: 0 }}>عن المنصة</h1>
           </div>
-          <p style={{ fontSize: isMobile() ? 16 : 19, marginBottom: isMobile() ? 18 : 22, lineHeight: 1.8, textAlign:'center' }}>
+          <p className="font-body" style={{ fontSize: isMobile() ? 16 : 19, marginBottom: isMobile() ? 18 : 22, lineHeight: 1.8, textAlign:'center' }}>
             <b>منصة التحليل القانوني الذكي</b> هي أداة متقدمة تساعدك على تحليل النصوص القانونية العربية بدقة واحترافية، عبر 13 مرحلة تحليلية متكاملة تغطي جميع الجوانب القانونية، مع دعم التحليل التراكمي المتسلسل (كل مرحلة تعتمد على نتائج السابقة حتى الوصول للعريضة النهائية).
           </p>
           <div style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
             <span style={{fontSize: isMobile() ? 18 : 22}}>🛠️</span>
-            <h2 style={{ color: theme.accent2, fontSize: isMobile() ? 18 : 22, margin: 0 }}>طريقة الاستخدام:</h2>
+            <h2 className="headline-sm font-headline" style={{ color: theme.accent2, margin: 0 }}>طريقة الاستخدام:</h2>
           </div>
-          <ol style={{ fontSize: isMobile() ? 15 : 17, marginBottom: isMobile() ? 14 : 18, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
+          <ol className="font-body" style={{ fontSize: isMobile() ? 15 : 17, marginBottom: isMobile() ? 14 : 18, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
             <li>احصل على مفتاح Gemini API الخاص بك من <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{color:theme.accent, textDecoration:'underline'}}>Google AI Studio</a>.</li>
             <li>أدخل المفتاح في خانة &quot;مفتاح Gemini API&quot; في الصفحة الرئيسية.</li>
             <li>أدخل النص القانوني الذي ترغب في تحليله واسم القضية (اختياري).</li>
@@ -45,20 +45,20 @@ export default function About() {
             <li>اضغط على &quot;ابدأ التحليل&quot; وستظهر لك النتيجة خلال ثوانٍ.</li>
             <li>يمكنك حفظ القضية، تصديرها أو استيرادها لاحقًا.</li>
           </ol>
-          <div style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
+          <div className="fade-in-up" style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
             <span style={{fontSize: isMobile() ? 18 : 22}}>📋</span>
-            <h2 style={{ color: theme.accent2, fontSize: isMobile() ? 18 : 22, margin: 0 }}>مراحل التحليل القانوني:</h2>
+            <h2 className="headline-sm font-headline" style={{ color: theme.accent2, margin: 0 }}>مراحل التحليل القانوني:</h2>
           </div>
-          <ul style={{ fontSize: isMobile() ? 15 : 17, marginBottom: isMobile() ? 14 : 18, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
+          <ul className="font-body" style={{ fontSize: isMobile() ? 15 : 17, marginBottom: isMobile() ? 14 : 18, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
             {stages.map((stage, i) => (
               <li key={i} style={{marginBottom: isMobile() ? 3 : 4}}><b>{i+1}.</b> {stage}</li>
             ))}
           </ul>
-          <div style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
+          <div className="fade-in-up" style={{margin: isMobile() ? '24px 0 14px 0' : '32px 0 18px 0', display:'flex', alignItems:'center', gap: isMobile() ? 6 : 8}}>
             <span style={{fontSize: isMobile() ? 18 : 22}}>💡</span>
-            <h2 style={{ color: theme.accent2, fontSize: isMobile() ? 18 : 22, margin: 0 }}>ملاحظات هامة:</h2>
+            <h2 className="headline-sm font-headline" style={{ color: theme.accent2, margin: 0 }}>ملاحظات هامة:</h2>
           </div>
-          <ul style={{ fontSize: isMobile() ? 14 : 16, marginBottom: 0, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
+          <ul className="font-body" style={{ fontSize: isMobile() ? 14 : 16, marginBottom: 0, lineHeight: 1.8, paddingRight: isMobile() ? 16 : 24, background: darkMode ? '#181a2a' : '#f5f7ff', borderRadius: isMobile() ? 10 : 12, padding: isMobile() ? '14px 14px 14px 6px' : '18px 18px 18px 8px', border: `1px solid ${theme.border}` }}>
             <li>المنصة مجانية حاليًا، وقد تصبح باشتراك لاحقًا.</li>
             <li>كل مستخدم يحتاج لمفتاح Gemini API خاص به (لا تشارك مفتاحك مع الآخرين).</li>
             <li>النتائج تعتمد على دقة النص المدخل وصحة المفتاح.</li>
