@@ -258,6 +258,27 @@ export default function ChatPage() {
     copyToClipboard(transcript);
   };
 
+  const clearChat = () => {
+    if (messages.length === 0) return;
+    
+    const caseName = selectedCaseId ? cases.find(c => c.id === selectedCaseId)?.name : 'العامة';
+    const confirmMessage = `هل أنت متأكد من حذف المحادثة الحالية حول "${caseName}"؟\n\nهذا الإجراء سيحذف ${messages.length} رسالة ولا يمكن التراجع عنه.`;
+    
+    if (window.confirm(confirmMessage)) {
+      setMessages([]);
+      setLastUserMessage('');
+      setCopiedMessageIndex(null);
+      
+      // حذف المحادثة من التخزين المحلي
+      const key = `${CHAT_STORAGE_KEY_PREFIX}${selectedCaseId || 'general'}`;
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // تجاهل أخطاء التخزين
+      }
+    }
+  };
+
   const autoResizeInput = () => {
     const el = inputRef.current;
     if (!el) return;
@@ -336,11 +357,18 @@ export default function ChatPage() {
               {selectedCaseId && (
                 <div style={{fontSize: isMobile()? 12:13, color: theme.accent2}}>
                   المحادثة حول: <b>{cases.find(c => c.id === selectedCaseId)?.name}</b>
+                  <br />
+                  <small style={{color: '#6b7280'}}>
+                    {cases.find(c => c.id === selectedCaseId)?.stages?.length || 0} مرحلة محللة
+                  </small>
                 </div>
               )}
-              <div style={{display:'flex', gap:8}}>
+              <div style={{display:'flex', gap:8, flexWrap: 'wrap'}}>
                 <Button onClick={copyTranscript} ariaLabel="نسخ المحادثة كاملة" variant="info" style={{ background: '#0ea5e9' }}>نسخ المحادثة</Button>
                 <Button onClick={handleSaveStrategy} disabled={saving || !messages.length} ariaLabel="حفظ كاستراتيجية" variant="success" style={{ background: saving || !messages.length ? '#9ca3af' : '#10b981', cursor: saving || !messages.length ? 'not-allowed' : 'pointer' }}>{saving ? '⏳' : '💾 حفظ كاستراتيجية'}</Button>
+                <Button onClick={clearChat} disabled={messages.length === 0} ariaLabel="حذف المحادثة" variant="danger" style={{ background: messages.length === 0 ? '#9ca3af' : '#ef4444', cursor: messages.length === 0 ? 'not-allowed' : 'pointer' }}>
+                  🗑️ حذف المحادثة {messages.length > 0 && `(${messages.length})`}
+                </Button>
               </div>
             </div>
             <div style={{marginTop:6, color:'#6b7280', fontSize: isMobile()? 13:14}}>اسأل ضمن الإطار القانوني الفلسطيني لتحصل على إجابات مبنية على القوانين والأنظمة الفلسطينية</div>
