@@ -6,6 +6,7 @@ import { set as idbSet } from 'idb-keyval';
 import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import ArticleCard from '../components/ArticleCard';
+import LegalNews from '../components/LegalNews';
 import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
 import { loadExportPreferences } from '../utils/exportSettings';
 import { Button } from '../components/UI';
@@ -274,6 +275,9 @@ export default function Home() {
           margin: '0 auto',
           padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem',
         }}>
+          {/* أخبار قانونية فلسطينية */}
+          <LegalNews apiKey={apiKey} model={preferredModel} />
+
           {/* شبكة مقالات تعريفية */}
           <section className="fade-in-up" style={{ marginBottom: 24 }}>
             <h2 className="headline-lg" style={{ margin: '0 0 12px 0' }}>مقالات قانونية مختارة</h2>
@@ -282,23 +286,23 @@ export default function Home() {
             </p>
             <div className="grid-responsive">
               <ArticleCard
-                imageUrl="https://images.unsplash.com/photo-1453945619913-79ec89a82c51?q=80&w=1200&auto=format&fit=crop"
-                title="مبادئ العدالة الإجرائية"
-                excerpt="نظرة موجزة على ضمانات المحاكمة العادلة وحقوق الدفاع وعلانية الجلسات."
+                imageUrl="/icon-512x512.svg"
+                title="آخر المستجدات القانونية في فلسطين"
+                excerpt="متابعة سريعة لأبرز القرارات والتطورات القانونية والمؤسسية داخل فلسطين."
                 likes={124}
                 comments={18}
               />
               <ArticleCard
-                imageUrl="https://images.unsplash.com/photo-1555375771-14b6c00c81c2?q=80&w=1200&auto=format&fit=crop"
-                title="السوابق القضائية ودورها"
-                excerpt="كيف تُوجه السوابق القضائية قرارات المحاكم وتحقق الاتساق والاستقرار القانوني."
+                imageUrl="/icon-192x192.svg"
+                title="تطورات القدس والضفة الغربية"
+                excerpt="أهم الأخبار المتعلقة بالأحداث والقرارات المؤثرة في القدس والضفة الغربية."
                 likes={89}
                 comments={10}
               />
               <ArticleCard
-                imageUrl="https://images.unsplash.com/photo-1535543669187-2f9d4d8a2139?q=80&w=1200&auto=format&fit=crop"
-                title="التكييف القانوني للوقائع"
-                excerpt="خطوات عملية لتحويل الوقائع إلى أوصاف قانونية دقيقة."
+                imageUrl="/icon-512x512.svg"
+                title="المشهد الإنساني في غزة"
+                excerpt="ملخصات مختصرة حول الاحتياجات الإنسانية والتطورات المدنية في قطاع غزة."
                 likes={70}
                 comments={7}
               />
