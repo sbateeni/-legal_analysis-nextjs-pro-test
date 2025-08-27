@@ -77,14 +77,14 @@ export default function Settings() {
 
   return (
     <div style={{ fontFamily: 'Tajawal, Arial, sans-serif', direction: 'rtl', minHeight: '100vh', background: theme.background, color: theme.text }}>
-      <main className="fade-in-up" style={{ maxWidth: 900, margin: '0 auto', padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem' }}>
+      <main className="fade-in-up container" style={{ maxWidth: 900, padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem' }}>
         <div className="font-headline" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:16}}>
           <span style={{fontSize: isMobile()? 28:32}}>⚙️</span>
           <h1 className="headline-lg" style={{margin:0, color: theme.accent}}>الإعدادات</h1>
         </div>
 
         {/* بطاقة مفتاح API */}
-        <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24, marginBottom: 16 }}>
+        <div className="card-ui" style={{ background: theme.card, borderColor: theme.border, padding: isMobile()? 16:24, marginBottom: 16 }}>
           <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>🔑</span>
             <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>مفتاح Gemini API</h2>
@@ -97,43 +97,43 @@ export default function Settings() {
             style={{ width: '100%', padding: isMobile()? 12:14, border: `1.5px solid ${theme.input}`, borderRadius: 12, fontSize: isMobile()? 15:16, outline: 'none' }}
           />
           <div style={{display:'flex', gap:10, marginTop:10, flexWrap:'wrap'}}>
-            <button onClick={handleSaveKey} disabled={saving} style={{background: theme.accent2, color:'#fff', border:'none', borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor: saving? 'not-allowed':'pointer'}}>حفظ المفتاح</button>
-            <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{background:'#fff', color: theme.accent, border:`1px solid ${theme.accent2}`, borderRadius: 10, padding:'10px 18px', fontWeight:800, textDecoration:'none'}}>الحصول على المفتاح</a>
+            <button onClick={handleSaveKey} disabled={saving} className="btn btn-info" style={{ background: theme.accent2, cursor: saving? 'not-allowed':'pointer' }}>حفظ المفتاح</button>
+            <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="btn" style={{ background:'#fff', color: theme.accent, border:`1px solid ${theme.accent2}` }}>الحصول على المفتاح</a>
           </div>
         </div>
 
         {/* بطاقة المظهر والخصوصية */}
-        <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24, marginBottom: 16 }}>
+        <div className="card-ui" style={{ background: theme.card, borderColor: theme.border, padding: isMobile()? 16:24, marginBottom: 16 }}>
           <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>{darkMode ? '🌙' : '☀️'}</span>
             <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>المظهر والخصوصية</h2>
           </div>
-          <button onClick={() => setDarkMode(!darkMode)} style={{background: 'none', border:`1px solid ${theme.accent2}`, color: theme.accent2, borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>
+          <button onClick={() => setDarkMode(!darkMode)} className="btn" style={{ background: 'none', border:`1px solid ${theme.accent2}`, color: theme.accent2 }}>
             تبديل الوضع ({darkMode ? 'ليلي' : 'فاتح'})
           </button>
-          <p className="font-body" style={{marginTop:12, fontSize:14, lineHeight:1.8, background: '#f5f7ff', color:'#222', borderRadius: 10, padding: '10px 12px', border:`1px solid ${theme.border}`}}>
+          <p className="font-body card-panel" style={{marginTop:12, fontSize:14, lineHeight:1.8, background: '#f5f7ff', color:'#222', padding: '10px 12px', borderColor: theme.border }}>
             🔒 جميع بياناتك (القضايا والمفاتيح) تحفظ محليًا على جهازك فقط ولا يتم رفعها إلى أي خادم.
           </p>
         </div>
 
         {/* بطاقة القضايا: تصدير/استيراد ومسح */}
-        <div style={{ background: theme.card, borderRadius: 16, boxShadow: `0 2px 12px ${theme.shadow}`, border: `1.5px solid ${theme.border}`, padding: isMobile()? 16:24 }}>
+        <div className="card-ui" style={{ background: theme.card, borderColor: theme.border, padding: isMobile()? 16:24 }}>
           <div className="font-headline" style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
             <span style={{fontSize: isMobile()? 22:24}}>📦</span>
             <h2 className="headline-sm" style={{margin:0, color: theme.accent2}}>القضايا</h2>
           </div>
           <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
-            <button onClick={handleExport} style={{background: theme.accent, color:'#fff', border:'none', borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>⬇️ تصدير القضايا</button>
-            <label style={{background: theme.accent2, color:'#fff', borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>
+            <button onClick={handleExport} className="btn btn-info" style={{ background: theme.accent }}>⬇️ تصدير القضايا</button>
+            <label className="btn btn-info" style={{ background: theme.accent2 }}>
               ⬆️ استيراد قضايا
               <input type="file" accept="application/json" onChange={handleImport} style={{ display: 'none' }} />
             </label>
-            <button onClick={handleClearAll} style={{background:'#ff6b6b', color:'#fff', border:'none', borderRadius: 10, padding:'10px 18px', fontWeight:800, cursor:'pointer'}}>🗑️ مسح كل البيانات</button>
+            <button onClick={handleClearAll} className="btn btn-danger">🗑️ مسح كل البيانات</button>
           </div>
         </div>
 
         {status && (
-          <div style={{marginTop:12, textAlign:'center', color: theme.accent2, fontWeight:800}}>{status}</div>
+          <div className="text-center" style={{marginTop:12, color: theme.accent2, fontWeight:800}}>{status}</div>
         )}
       </main>
     </div>

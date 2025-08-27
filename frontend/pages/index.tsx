@@ -7,6 +7,7 @@ import { isMobile } from '../utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
 import ArticleCard from '../components/ArticleCard';
 import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
+import { Button, Card } from '../components/UI';
 
 
 // تعريف نوع BeforeInstallPromptEvent
@@ -656,18 +657,12 @@ export default function Home() {
 
               {/* محتوى التبويب الثالث: النتائج */}
               {activeTab === 'results' && (
-                <div style={{
-                  background: theme.card,
-                  borderRadius: 16,
-                  boxShadow: `0 4px 20px ${theme.shadow}`,
-                  padding: isMobile() ? 20 : 32,
-                  border: `1.5px solid ${theme.border}`,
-                }}>
+                <div className="card-ui" style={{ background: theme.card, padding: isMobile() ? 20 : 32, borderColor: theme.border }}>
                   <div className="section-title" style={{ marginBottom: 16 }}>📊 ملخص النتائج</div>
 
                   {/* أزرار التصدير */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                    <button
+                    <Button
                       onClick={() => {
                         const stages = stageResults
                           .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
@@ -675,11 +670,11 @@ export default function Home() {
                         if (stages.length === 0) return;
                         exportResultsToPDF(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
                       }}
-                      className="btn btn-danger"
+                      variant="danger"
                     >
                       ⬇️ تصدير PDF
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         const stages = stageResults
                           .map((content, idx) => content ? ({ title: ALL_STAGES[idx], content }) : null)
@@ -687,10 +682,10 @@ export default function Home() {
                         if (stages.length === 0) return;
                         exportResultsToDocx(stages, { caseName: caseNameInput || 'قضية', partyRole: partyRole || undefined });
                       }}
-                      className="btn btn-info"
+                      variant="info"
                     >
                       ⬇️ تصدير Docx
-                    </button>
+                    </Button>
                     <Link href="/exports" className="btn btn-success" style={{ textDecoration: 'none' }}>
                       📚 سجل التصدير
                     </Link>

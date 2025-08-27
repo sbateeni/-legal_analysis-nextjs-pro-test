@@ -187,14 +187,7 @@ export default function ChatPage() {
         margin: '0 auto',
         padding: isMobile() ? '1rem 0.5rem' : '2rem 1rem'
       }}>
-        <div style={{
-          background: theme.card,
-          borderRadius: 16,
-          boxShadow: `0 4px 20px ${theme.shadow}`,
-          border: `1.5px solid ${theme.border}`,
-          padding: isMobile() ? 16 : 24,
-          marginBottom: 16
-        }}>
+        <div className="card-ui" style={{ background: theme.card, borderColor: theme.border, padding: isMobile() ? 16 : 24, marginBottom: 16 }}>
           {!apiKey && (
             <div style={{
               background: '#fffbe6',
@@ -235,14 +228,7 @@ export default function ChatPage() {
         </div>
 
         {/* بطاقة المحادثة */}
-        <div style={{
-          background: theme.card,
-          borderRadius: 16,
-          boxShadow: `0 4px 20px ${theme.shadow}`,
-          border: `1.5px solid ${theme.border}`,
-          padding: 0,
-          overflow: 'hidden'
-        }}>
+        <div className="card-ui" style={{ background: theme.card, borderColor: theme.border, padding: 0, overflow: 'hidden' }}>
           <div style={{padding: isMobile()? 14:18, borderBottom: `1px solid ${theme.border}`, background: 'rgba(99,102,241,0.06)'}}>
             <div style={{display:'flex', alignItems:'center', gap:10, justifyContent:'space-between', flexWrap:'wrap'}}>
               <div style={{display:'flex', alignItems:'center', gap:10}}>
