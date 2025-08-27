@@ -1,14 +1,15 @@
+"use client";
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '../contexts/ThemeContext';
 import { isMobile } from '../utils/crypto';
 
 export default function Header() {
   const { darkMode, setDarkMode, theme, mounted } = useTheme();
-  const router = useRouter();
+  const pathname = usePathname();
   if (!mounted) return null;
 
-  const isActive = (path: string) => router.pathname === path;
+  const isActive = (path: string) => pathname === path;
 
   return (
     <header style={{
