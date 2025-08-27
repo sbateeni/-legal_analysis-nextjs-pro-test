@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import Image from 'next/image';
 
@@ -15,7 +15,7 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [imgSrc] = useState<string>('/DeWatermark.ai_1756309976798.jpeg');
 
-  const fetchNews = async (force = false) => {
+  const fetchNews = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -34,13 +34,13 @@ export default function LegalNews({ apiKey, model = 'gemini-1.5-flash' }: Props)
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiKey, model]);
 
   useEffect(() => {
     if (!apiKey) return;
     // عند التحميل: نحاول فقط قراءة الكاش بدون توليد
     fetchNews(false);
-  }, [apiKey, model]);
+  }, [fetchNews]);
 
   if (!apiKey) return null;
 

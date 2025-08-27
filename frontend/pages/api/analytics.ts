@@ -1,14 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-interface AnalysisStage {
-  id: string;
-  stageIndex: number;
-  stage: string;
-  input: string;
-  output: string;
-  date: string;
-}
-
 interface AnalyticsData {
   totalCases: number;
   casesByType: Record<string, number>;
