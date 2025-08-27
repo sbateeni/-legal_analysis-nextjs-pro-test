@@ -1,49 +1,82 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// تخزين بسيط بالذاكرة لعينات Web Vitals (غير دائم؛ لغرض القياس السريع فقط)
-type VitalSample = { name: string; value: number; id: string; label?: string; startTime?: number; t: number };
-const inMemoryVitals: VitalSample[] = [];
+interface AnalysisStage {
+  id: string;
+  stageIndex: number;
+  stage: string;
+  input: string;
+  output: string;
+  date: string;
+}
+
+interface LegalCase {
+  id: string;
+  name: string;
+  createdAt: string;
+  stages: AnalysisStage[];
+  tags?: string[];
+}
+
+interface AnalyticsData {
+  totalCases: number;
+  casesByType: Record<string, number>;
+  casesByMonth: Record<string, number>;
+  averageStagesCompleted: number;
+  mostCommonIssues: string[];
+  successRate: number;
+  averageCaseLength: number;
+  topStages: Array<{ stage: string; count: number }>;
+  recentActivity: Array<{ date: string; count: number }>;
+  note?: string;
+}
+
+// دالة تحديد نوع القضية
+function determineCaseType(text: string): string {
+  if (!text || typeof text !== 'string') return 'قضية مدنية عامة';
+  
+  if (/ميراث|ورثة|إرث/i.test(text)) return 'قضية ميراث';
+  if (/طلاق|زواج|أحوال شخصية/i.test(text)) return 'قضية أحوال شخصية';
+  if (/عقد|تجاري|شركة|عمل/i.test(text)) return 'قضية تجارية';
+  if (/عقوبة|جريمة|جنحة/i.test(text)) return 'قضية جنائية';
+  if (/أرض|عقار|ملكية/i.test(text)) return 'قضية عقارية';
+  if (/عمل|موظف|راتب/i.test(text)) return 'قضية عمل';
+  return 'قضية مدنية عامة';
+}
+
+// دالة حساب طول النص
+function calculateTextLength(text: string): number {
+  if (!text || typeof text !== 'string') return 0;
+  return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+}
+
+// دالة محاكاة جلب البيانات (لأن IndexedDB لا يعمل على الخادم)
+function getMockAnalyticsData(): AnalyticsData {
+  return {
+    totalCases: 0,
+    casesByType: {},
+    casesByMonth: {},
+    averageStagesCompleted: 0,
+    mostCommonIssues: [],
+    successRate: 0,
+    averageCaseLength: 0,
+    topStages: [],
+    recentActivity: [],
+    note: 'لم يتم إنشاء أي قضايا بعد. ابدأ بإنشاء قضية جديدة من الصفحة الرئيسية لرؤية التحليلات والإحصائيات.'
+  };
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    if (req.method === 'POST') {
-      const sample = req.body as Partial<VitalSample>;
-      if (!sample || typeof sample.name !== 'string' || typeof sample.value !== 'number') {
-        return res.status(400).json({ error: 'invalid payload' });
-      }
-      inMemoryVitals.push({
-        name: sample.name,
-        value: sample.value,
-        id: String(sample.id || ''),
-        label: sample.label,
-        startTime: typeof sample.startTime === 'number' ? sample.startTime : undefined,
-        t: Date.now(),
-      });
-      // احتفاظ بآخر 500 عينة فقط
-      if (inMemoryVitals.length > 500) inMemoryVitals.splice(0, inMemoryVitals.length - 500);
-      return res.status(204).end();
-    }
-
-    if (req.method === 'GET') {
-      // إعادة تجميع مبسط
-      const summary = inMemoryVitals.reduce<Record<string, { count: number; p95: number; avg: number }>>((acc, s) => {
-        const key = s.name;
-        acc[key] ||= { count: 0, p95: 0, avg: 0 };
-        const item = acc[key];
-        item.count += 1;
-        item.avg += s.value;
-        return acc;
-      }, {});
-      for (const k of Object.keys(summary)) {
-        const values = inMemoryVitals.filter(v => v.name === k).map(v => v.value).sort((a, b) => a - b);
-        const idx = Math.floor(values.length * 0.95);
-        summary[k].p95 = values[idx] ?? 0;
-        summary[k].avg = values.length ? summary[k].avg / values.length : 0;
-      }
-      return res.status(200).json({ vitalsCount: inMemoryVitals.length, summary });
-    }
-
+  if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // بما أن IndexedDB لا يعمل على الخادم، سنعيد بيانات محاكاة
+    // في التطبيق الحقيقي، يمكن استخدام قاعدة بيانات حقيقية مثل PostgreSQL أو MongoDB
+    const analyticsData = getMockAnalyticsData();
+
+    return res.status(200).json(analyticsData);
+
   } catch (error: unknown) {
     console.error('Error in analytics API:', error);
     const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
