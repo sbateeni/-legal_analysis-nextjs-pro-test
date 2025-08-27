@@ -31,6 +31,7 @@ export default function ChatPage() {
   const [preferredModel, setPreferredModel] = useState<string>('gemini-1.5-flash');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const CHAT_STORAGE_KEY_PREFIX = 'legal_chat_';
 
   useEffect(() => {
     // تحميل API Key من قاعدة البيانات الموحدة
@@ -48,6 +49,34 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load messages when switching case (or first mount)
+  useEffect(() => {
+    const key = `${CHAT_STORAGE_KEY_PREFIX}${selectedCaseId || 'general'}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatMessage[];
+        if (Array.isArray(parsed)) setMessages(parsed);
+      } else {
+        setMessages([]);
+      }
+    } catch {
+      setMessages([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCaseId]);
+
+  // Persist messages per selected case
+  useEffect(() => {
+    const key = `${CHAT_STORAGE_KEY_PREFIX}${selectedCaseId || 'general'}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(messages));
+    } catch {
+      // ignore storage errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, selectedCaseId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -350,68 +379,69 @@ export default function ChatPage() {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   border: message.role === 'assistant' ? `1px solid ${theme.border}` : 'none'
                 }}>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
-                  {message.role === 'assistant' && (
-                    <div style={{marginTop:8, display:'flex', gap:8, alignItems:'center'}}>
-                      <button onClick={() => copyToClipboard(message.content, index)} aria-label="نسخ إجابة المساعد" style={{background:'#eef2ff', border:`1px solid ${theme.border}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', color:'#4338ca'}}>نسخ</button>
-                      {copiedMessageIndex === index && <span style={{fontSize:12, color:'#10b981'}}>تم النسخ</span>}
-                    </div>
+                  {message.role === 'assistant' ? (
+                    <>
+                      <div style={{ fontWeight: 800, color: theme.accent, marginBottom: 6 }}>الإجابة:</div>
+                      {/* حاول إبراز JSON ككتلة منفصلة إن وجد */}
+                      {(() => {
+                        try {
+                          const fenced = message.content.match(/```json\n([\s\S]*?)\n```/i);
+                          const plain = fenced ? fenced[1] : message.content;
+                          const parsed = JSON.parse(plain);
+                          return (
+                            <div style={{
+                              background: '#f8fafc',
+                              border: `1px solid ${theme.border}`,
+                              borderRadius: 8,
+                              padding: 12,
+                              marginBottom: 8,
+                              direction: 'ltr',
+                              textAlign: 'left',
+                              overflowX: 'auto',
+                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                              fontSize: 13
+                            }}>
+                              {JSON.stringify(parsed, null, 2)}
+                            </div>
+                          );
+                        } catch {
+                          return <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{message.content}</div>;
+                        }
+                      })()}
+                      <div style={{marginTop:8, display:'flex', gap:8, alignItems:'center'}}>
+                        <button onClick={() => copyToClipboard(message.content, index)} aria-label="نسخ إجابة المساعد" style={{background:'#eef2ff', border:`1px solid ${theme.border}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', color:'#4338ca'}}>نسخ</button>
+                        {copiedMessageIndex === index && <span style={{fontSize:12, color:'#10b981'}}>تم النسخ</span>}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
                   )}
                   
                   {/* Suggestions */}
                   {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
                     <div style={{ marginTop: '1rem' }}>
-                      <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.8 }}>
+                      <div style={{ fontSize: '0.95rem', marginBottom: '0.25rem', fontWeight: 700, color: theme.accent2 }}>
                         اقتراحات:
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <ul style={{ margin: 0, paddingRight: 18 }}>
                         {message.suggestions.map((suggestion, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              background: '#f3f4f6',
-                              border: `1px solid ${theme.border}`,
-                              borderRadius: '0.25rem',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              color: '#374151'
-                            }}
-                          >
-                            {suggestion}
-                          </button>
+                          <li key={idx} style={{ marginBottom: 6 }}>{suggestion}</li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
                   )}
 
                   {/* Next Steps */}
                   {message.role === 'assistant' && message.nextSteps && message.nextSteps.length > 0 && (
                     <div style={{ marginTop: '1rem' }}>
-                      <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.8 }}>
+                      <div style={{ fontSize: '0.95rem', marginBottom: '0.25rem', fontWeight: 700, color: theme.accent2 }}>
                         الخطوات التالية:
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      <ol style={{ margin: 0, paddingRight: 18 }}>
                         {message.nextSteps.map((step, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleNextStepClick(step)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              background: '#e0e7ff',
-                              border: '1px solid #c7d2fe',
-                              borderRadius: '0.25rem',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              color: '#4338ca',
-                              textAlign: 'left'
-                            }}
-                          >
-                            {step}
-                          </button>
+                          <li key={idx} style={{ marginBottom: 6 }}>{step}</li>
                         ))}
-                      </div>
+                      </ol>
                     </div>
                   )}
 
