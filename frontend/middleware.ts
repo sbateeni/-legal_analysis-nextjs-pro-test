@@ -4,6 +4,7 @@ const PUBLIC_PATHS = new Set<string>([
   '/',
   '/login',
   '/signup',
+  '/api/billing/webhook',
   '/api/auth',
   '/api/auth/signin',
   '/api/auth/callback',

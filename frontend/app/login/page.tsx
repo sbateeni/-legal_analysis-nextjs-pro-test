@@ -16,7 +16,7 @@ export default function LoginPage() {
     try {
       const res = await signIn('credentials', { email, password, redirect: false });
       if (!res || res.error) throw new Error('invalid');
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     } catch (err) {
       setError('تعذر تسجيل الدخول. حاول مرة أخرى.');
     } finally {
