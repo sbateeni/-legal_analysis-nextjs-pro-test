@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import fs from 'fs';
+import path from 'path';
 import { sanitizeText } from '../../utils/validation';
 import { checkRateLimit } from '../../utils/cache';
 import stages from '../../stages';
@@ -23,7 +25,8 @@ function buildChatPrompt(
     caseType?: string;
     currentStage?: number;
     previousAnalysis?: string;
-  }
+  },
+  kbSnippets?: Array<{ strategy_title: string; strategy_steps: string[]; legal_basis: Array<{ source: string; article?: string }> }>
 ): string {
   const contextInfo = context ? `
 السياق الحالي:
@@ -42,6 +45,11 @@ ${conversationHistory.slice(-5).map(msg => `${msg.role === 'user' ? 'المست�
 - ${STAGE_TITLES.join('\n- ')}
 ` : '';
 
+  const kbSection = (kbSnippets && kbSnippets.length) ? `
+معرفة مشتركة ذات صلة (ملخص استراتيجيات قانونية فلسطينية):
+${kbSnippets.map((s, i) => `(${i+1}) ${s.strategy_title}\n- خطوات مختصرة: ${s.strategy_steps.slice(0,3).join(' | ')}\n- أساس قانوني: ${s.legal_basis.map(b=>`${b.source}${b.article?` ${b.article}`:''}`).slice(0,2).join(' ؛ ')}`).join('\n\n')}
+` : '';
+
   // نطلب من النموذج إخراج JSON منظم
   const jsonSpec = `
 أخرج نتيجتك حصراً بصيغة JSON صالحة وفق المخطط التالي دون أي نص إضافي خارج JSON:
@@ -58,6 +66,7 @@ ${conversationHistory.slice(-5).map(msg => `${msg.role === 'user' ? 'المست�
 
 ${contextInfo}
 ${stagesList}
+${kbSection}
 ${history}
 
 ${jsonSpec}
@@ -72,6 +81,35 @@ ${jsonSpec}
 6. لا تقدّم معلومات مضللة، وميّز بين الرأي القانوني العام والمتطلبات الإجرائية الرسمية.
 7. إخلاء مسؤولية: هذه المعلومات للتثقيف والدعم وليست بديلاً عن استشارة محامٍ مرخّص في فلسطين عند الحاجة.
 `;
+}
+
+// KB selection (بسيطة)
+type KBRecord = {
+  id: string;
+  topic: string;
+  jurisdiction: string;
+  strategy_title: string;
+  strategy_steps: string[];
+  legal_basis: Array<{ source: string; article?: string; note?: string }>;
+  tags: string[];
+};
+
+function selectRelevantKB(message: string, maxItems = 5): Array<KBRecord> {
+  try {
+    const kbPath = path.join(process.cwd(), 'frontend', 'data', 'legal_kb.json');
+    const raw = fs.readFileSync(kbPath, 'utf8');
+    const parsed = JSON.parse(raw) as { records: KBRecord[] };
+    const q = message.toLowerCase();
+    const scored = parsed.records.map(r => {
+      const hay = [r.topic, r.strategy_title, ...(r.tags||[]), ...(r.legal_basis||[]).map(lb => `${lb.source} ${lb.article||''}`)].join(' ').toLowerCase();
+      let score = 0;
+      q.split(/\s+/).forEach(w => { if (w && hay.includes(w)) score += 1; });
+      return { r, score };
+    }).sort((a,b)=>b.score-a.score);
+    return scored.filter(s=>s.score>0).slice(0, maxItems).map(s=>s.r);
+  } catch {
+    return [];
+  }
 }
 
 // دالة استخراج الاقتراحات من الإجابة (احتياطية للفشل في JSON)
@@ -167,7 +205,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // بناء prompt وطلب JSON
-    const prompt = buildChatPrompt(cleanMessage, conversationHistory as ChatMessage[], context);
+    const kb = selectRelevantKB(cleanMessage, 5);
+    const kbSnippets = kb.map(k => ({ strategy_title: k.strategy_title, strategy_steps: k.strategy_steps, legal_basis: k.legal_basis?.map(b => ({ source: b.source, article: b.article })) || [] }));
+    const prompt = buildChatPrompt(cleanMessage, conversationHistory as ChatMessage[], context, kbSnippets);
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const preferredModel = modelName;

@@ -791,64 +791,7 @@ export default function Home() {
               )}
         </main>
         
-        {/* Footer محسن */}
-        <footer style={{ 
-          textAlign: 'center', 
-          color: '#888', 
-          marginTop: 48, 
-          fontSize: 15,
-          background: theme.card,
-          borderRadius: 16,
-          padding: isMobile() ? 20 : 32,
-          boxShadow: `0 4px 20px ${theme.shadow}`,
-          border: `1px solid ${theme.border}`,
-          margin: '48px auto 0',
-          maxWidth: 800,
-          width: '90%',
-        }}>
-          <div style={{fontSize: 18, fontWeight: 700, color: theme.accent, marginBottom: 16}}>
-            &copy; {new Date().getFullYear()} منصة التحليل القانوني الذكي
-          </div>
-          <div style={{
-            marginTop: 18, 
-            background: darkMode ? '#2a1a1a' : '#fffbe6', 
-            color: darkMode ? '#ffb6b6' : '#b7791f', 
-            borderRadius: 12, 
-            padding: '16px 20px', 
-            display: 'inline-block', 
-            fontWeight: 700, 
-            fontSize: 14, 
-            boxShadow: `0 2px 8px ${darkMode ? '#ff6b6b22' : '#b7791f22'}`,
-            border: `1px solid ${darkMode ? '#ff6b6b33' : '#b7791f33'}`,
-            maxWidth: '90%',
-            lineHeight: 1.6
-          }}>
-            ⚠️ جميع بياناتك (القضايا والمفاتيح) تحفظ محليًا على جهازك فقط ولا يتم رفعها إلى أي خادم.
-            <button 
-              onClick={async () => { 
-                await clearAllCases(); 
-                await idbSet('legal_dark_mode', '0'); 
-                window.location.reload(); 
-              }} 
-              style={{
-                marginRight: 12, 
-                background: '#ff6b6b', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: 8, 
-                padding: '8px 18px', 
-                fontWeight: 800, 
-                fontSize: 14, 
-                cursor: 'pointer', 
-                boxShadow: '0 2px 8px #ff6b6b22', 
-                marginLeft: 8,
-                transition: 'all 0.3s ease'
-              }}
-            >
-              🗑️ مسح كل البيانات
-            </button>
-          </div>
-        </footer>
+        {/* تمت إزالة الفوتر التحذيري من الصفحة الرئيسية بناءً على طلب المستخدم */}
       </div>
       <style>{`
         @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }

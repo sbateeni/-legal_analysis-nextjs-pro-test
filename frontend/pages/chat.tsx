@@ -29,6 +29,7 @@ export default function ChatPage() {
   const [lastUserMessage, setLastUserMessage] = useState<string>('');
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   const [preferredModel, setPreferredModel] = useState<string>('gemini-1.5-flash');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     // تحميل API Key من قاعدة البيانات الموحدة
@@ -165,6 +166,46 @@ export default function ChatPage() {
     }
   };
 
+  const handleSaveStrategy = async () => {
+    if (!apiKey) {
+      setError('يرجى إعداد مفتاح API أولاً');
+      return;
+    }
+    if (!messages.length) {
+      setError('لا توجد محادثة لحفظها');
+      return;
+    }
+    try {
+      setSaving(true);
+      const summaryPrompt = 'لخص الاستراتيجية القانونية بشكل مجرد دون أي أسماء أو بيانات شخصية: عنوان مختصر للخطة + 4-6 خطوات + أساس قانوني (مصادر/مواد إن أمكن) + وسوم. أعد فقط JSON بالمفاتيح: strategy_title, strategy_steps[], legal_basis[{source, article}], tags[]';
+      await sendMessage(summaryPrompt);
+      setTimeout(async () => {
+        const last = messages[messages.length - 1];
+        if (!last || last.role !== 'assistant') { setSaving(false); return; }
+        let payload: any = null;
+        try { payload = JSON.parse(last.content); } catch {}
+        const record = {
+          id: `kb-${Date.now()}`,
+          topic: (payload?.strategy_title as string) || 'خطة قانونية من المحادثة',
+          jurisdiction: 'PS',
+          strategy_title: (payload?.strategy_title as string) || 'خطة قانونية',
+          strategy_steps: (payload?.strategy_steps as string[]) || ['خطوة 1','خطوة 2'],
+          legal_basis: (payload?.legal_basis as Array<{source:string;article?:string}>) || [],
+          patterns: [],
+          risk_notes: [],
+          citations: [],
+          tags: (payload?.tags as string[]) || ['محادثة','استراتيجية'],
+          reviewed: false,
+          createdAt: new Date().toISOString(),
+        };
+        await fetch('/api/legal-kb', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+        setSaving(false);
+      }, 1200);
+    } catch {
+      setSaving(false);
+    }
+  };
+
   const copyToClipboard = async (text: string, index?: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -248,6 +289,7 @@ export default function ChatPage() {
               )}
               <div style={{display:'flex', gap:8}}>
                 <Button onClick={copyTranscript} ariaLabel="نسخ المحادثة كاملة" variant="info" style={{ background: '#0ea5e9' }}>نسخ المحادثة</Button>
+                <Button onClick={handleSaveStrategy} disabled={saving || !messages.length} ariaLabel="حفظ كاستراتيجية" variant="success" style={{ background: saving || !messages.length ? '#9ca3af' : '#10b981', cursor: saving || !messages.length ? 'not-allowed' : 'pointer' }}>{saving ? '⏳' : '💾 حفظ كاستراتيجية'}</Button>
               </div>
             </div>
             <div style={{marginTop:6, color:'#6b7280', fontSize: isMobile()? 13:14}}>اسأل ضمن الإطار القانوني الفلسطيني لتحصل على إجابات مبنية على القوانين والأنظمة الفلسطينية</div>
