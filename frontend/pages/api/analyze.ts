@@ -24,7 +24,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, modelName?: string)
   if (!apiKey) throw new Error('يرجى إدخال مفتاح Gemini API الخاص بك.');
   
   const genAI = new GoogleGenerativeAI(apiKey);
-  const name = modelName || (globalThis as any).__PREFERRED_MODEL__ || 'gemini-1.5-flash';
+  const name = modelName || (globalThis as { __PREFERRED_MODEL__?: string }).__PREFERRED_MODEL__ || 'gemini-1.5-flash';
   const model = genAI.getGenerativeModel({ model: name });
   
   try {

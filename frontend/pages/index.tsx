@@ -8,7 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import ArticleCard from '../components/ArticleCard';
 import { exportResultsToPDF, exportResultsToDocx } from '../utils/export';
 import { loadExportPreferences } from '../utils/exportSettings';
-import { Button, Card } from '../components/UI';
+import { Button } from '../components/UI';
 
 
 // تعريف نوع BeforeInstallPromptEvent
