@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { isMobile } from '../utils/crypto';
+import { isMobile } from '@utils/crypto';
 import { useTheme } from '../contexts/ThemeContext';
-import { getAllCases } from '../utils/db';
+import { getAllCases } from '@utils/db';
 import Link from 'next/link';
+import LegalSourcesStatus from '../components/LegalSourcesStatus';
+import LegalUpdatesStatus from '../components/LegalUpdatesStatus';
+// تم حذف AuthGuard لجعل الموقع عاماً
+
+// تعريف نوع BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 interface AnalysisStage {
   id: string;
@@ -19,15 +28,60 @@ interface LegalCase {
   createdAt: string;
   stages: AnalysisStage[];
   tags?: string[];
+  status?: 'active' | 'completed' | 'archived';
+  priority?: 'low' | 'medium' | 'high';
+  caseType?: string;
+  clientName?: string;
+  courtName?: string;
+  nextHearing?: string;
+  notes?: string;
+}
+
+
+
+interface PredictiveAnalysis {
+  caseId: string;
+  caseName: string;
+  successProbability: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+  alternativeStrategies: string[];
+  estimatedDuration: string;
+  complexityScore: number;
+  lastAnalyzed: string;
+  legalContext?: {
+    relevantLaws: Array<{
+      title: string;
+      source: string;
+      relevanceScore: number;
+      type: string;
+    }>;
+    legalRecommendations: string[];
+    riskAssessment: {
+      level: 'low' | 'medium' | 'high';
+      factors: string[];
+      mitigationStrategies: string[];
+    };
+  };
 }
 
 interface AnalyticsData {
   totalCases: number;
+  activeCases: number;
+  completedCases: number;
+  totalDocuments: number;
+  upcomingEvents: number;
+  averageCompletionTime: number;
+  successRate: number;
+  caseTypes: { [key: string]: number };
+  monthlyTrends: { [key: string]: number };
+  predictiveAnalyses: PredictiveAnalysis[];
   casesByType: Record<string, number>;
   casesByMonth: Record<string, number>;
   averageStagesCompleted: number;
   mostCommonIssues: string[];
-  successRate: number;
   averageCaseLength: number;
   topStages: Array<{ stage: string; count: number }>;
   recentActivity: Array<{ date: string; count: number }>;
@@ -53,16 +107,150 @@ function calculateTextLength(text: string): number {
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 }
 
+// دالة التحليل التنبؤي
+function generatePredictiveAnalyses(cases: LegalCase[]): PredictiveAnalysis[] {
+  return cases.map(caseItem => {
+    const stagesCompleted = caseItem.stages.length;
+    const totalStages = 12;
+    const completionRate = stagesCompleted / totalStages;
+
+    // حساب احتمالية النجاح بناءً على عدة عوامل
+    let successProbability = 0;
+    
+    // عامل التقدم
+    successProbability += completionRate * 30;
+    
+    // عامل الأولوية
+    switch (caseItem.priority) {
+      case 'high':
+        successProbability += 20;
+        break;
+      case 'medium':
+        successProbability += 15;
+        break;
+      case 'low':
+        successProbability += 10;
+        break;
+    }
+
+    // عامل نوع القضية
+    if (caseItem.caseType?.includes('تجاري')) {
+      successProbability += 15;
+    } else if (caseItem.caseType?.includes('جنائي')) {
+      successProbability += 10;
+    } else if (caseItem.caseType?.includes('مدني')) {
+      successProbability += 12;
+    }
+
+    // عامل الوقت المنقضي
+    const daysSinceCreation = (new Date().getTime() - new Date(caseItem.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceCreation < 30) {
+      successProbability += 15;
+    } else if (daysSinceCreation < 90) {
+      successProbability += 10;
+    } else {
+      successProbability += 5;
+    }
+
+    // تحديد مستوى المخاطر
+    let riskLevel: 'low' | 'medium' | 'high' = 'low';
+    if (successProbability < 40) {
+      riskLevel = 'high';
+    } else if (successProbability < 70) {
+      riskLevel = 'medium';
+    }
+
+    // تحديد نقاط القوة والضعف
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+
+    if (completionRate > 0.5) {
+      strengths.push('تقدم جيد في المراحل');
+    } else {
+      weaknesses.push('تقدم بطيء في المراحل');
+    }
+
+    if (caseItem.priority === 'high') {
+      strengths.push('أولوية عالية');
+    }
+
+    if (daysSinceCreation > 90) {
+      weaknesses.push('مدة طويلة بدون تقدم');
+    }
+
+    if (caseItem.stages.length === 0) {
+      weaknesses.push('لم يتم البدء في التحليل');
+    } else {
+      strengths.push('تم البدء في التحليل');
+    }
+
+    // اقتراحات استراتيجية
+    const recommendations: string[] = [];
+    if (completionRate < 0.3) {
+      recommendations.push('تسريع وتيرة التحليل');
+      recommendations.push('مراجعة المراحل المكتملة');
+    }
+    if (caseItem.priority === 'low') {
+      recommendations.push('رفع مستوى الأولوية');
+    }
+    if (daysSinceCreation > 60) {
+      recommendations.push('مراجعة شاملة للقضية');
+    }
+
+    // استراتيجيات بديلة
+    const alternativeStrategies: string[] = [
+      'التركيز على النقاط القانونية القوية',
+      'البحث عن سوابق قضائية مشابهة',
+      'تحضير خطة بديلة للمرافعة',
+      'التشاور مع خبراء في المجال'
+    ];
+
+    // تقدير المدة
+    const estimatedDuration = completionRate > 0.5 
+      ? `${Math.ceil((1 - completionRate) * 30)} يوم`
+      : `${Math.ceil((1 - completionRate) * 60)} يوم`;
+
+    // درجة التعقيد
+    const complexityScore = Math.min(100, 
+      (1 - completionRate) * 50 + 
+      (caseItem.priority === 'high' ? 20 : caseItem.priority === 'medium' ? 10 : 5) +
+      (daysSinceCreation > 90 ? 15 : 0)
+    );
+
+    return {
+      caseId: caseItem.id,
+      caseName: caseItem.name,
+      successProbability: Math.min(100, Math.max(0, successProbability)),
+      riskLevel,
+      strengths,
+      weaknesses,
+      recommendations,
+      alternativeStrategies,
+      estimatedDuration,
+      complexityScore,
+      lastAnalyzed: new Date().toISOString()
+    };
+  });
+}
+
 // دالة تحليل البيانات
 function analyzeCases(cases: LegalCase[], isSingleCase: boolean = false): AnalyticsData {
   if (!cases || cases.length === 0) {
     return {
       totalCases: 0,
+      activeCases: 0,
+      completedCases: 0,
+      totalDocuments: 0,
+      upcomingEvents: 0,
+      averageCompletionTime: 0,
+      successRate: 0,
+      caseTypes: {},
+      monthlyTrends: {},
+      predictiveAnalyses: [],
       casesByType: {},
       casesByMonth: {},
       averageStagesCompleted: 0,
       mostCommonIssues: [],
-      successRate: 0,
       averageCaseLength: 0,
       topStages: [],
       recentActivity: [],
@@ -155,13 +343,28 @@ function analyzeCases(cases: LegalCase[], isSingleCase: boolean = false): Analyt
     'عدم تحديد الإطار الزمني للنزاع'
   ];
 
+  // حساب البيانات الجديدة
+  const activeCases = cases.filter(c => c.status === 'active').length;
+  const completedCasesCount = cases.filter(c => c.status === 'completed').length;
+  
+  // التحليل التنبؤي
+  const predictiveAnalyses = generatePredictiveAnalyses(cases);
+
   return {
     totalCases,
+    activeCases,
+    completedCases: completedCasesCount,
+    totalDocuments: 0, // سيتم تحديثه لاحقاً
+    upcomingEvents: 0, // سيتم تحديثه لاحقاً
+    averageCompletionTime: 0, // سيتم تحديثه لاحقاً
+    successRate,
+    caseTypes: casesByType,
+    monthlyTrends: casesByMonth,
+    predictiveAnalyses,
     casesByType,
     casesByMonth,
     averageStagesCompleted,
     mostCommonIssues,
-    successRate,
     averageCaseLength,
     topStages,
     recentActivity
@@ -169,12 +372,59 @@ function analyzeCases(cases: LegalCase[], isSingleCase: boolean = false): Analyt
 }
 
 export default function AnalyticsPage() {
-  const { theme } = useTheme();
+  return <AnalyticsPageContent />;
+}
+
+function AnalyticsPageContent() {
+  const { theme, darkMode } = useTheme();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCase, setSelectedCase] = useState<string>('all'); // 'all' أو ID القضية
   const [cases, setCases] = useState<LegalCase[]>([]);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // معالجة تثبيت التطبيق كتطبيق أيقونة
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // التحقق من وجود التطبيق مثبت
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    // عرض نافذة التثبيت
+    deferredPrompt.prompt();
+
+    // انتظار اختيار المستخدم
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('تم قبول تثبيت التطبيق');
+      setShowInstallButton(false);
+    } else {
+      console.log('تم رفض تثبيت التطبيق');
+    }
+
+    setDeferredPrompt(null);
+  };
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -223,6 +473,40 @@ export default function AnalyticsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: theme.background, color: theme.text, fontFamily: 'Tajawal, Arial, sans-serif' }}>
+      {/* زر تحميل التطبيق - فقط على الهاتف */}
+      {mounted && isMobile() && showInstallButton && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          left: 20,
+          zIndex: 1000,
+          background: theme.accent,
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '25px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          cursor: 'pointer',
+          fontWeight: 700,
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          transition: 'all 0.3s ease',
+          border: 'none',
+          outline: 'none'
+        }}
+        onClick={handleInstallClick}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'scale(0.95)';
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        >
+          📱 تثبيت التطبيق
+        </div>
+      )}
+
       {/* Header */}
       <header style={{ background: theme.accent2, color: 'white', padding: isMobile() ? '1rem' : '1.5rem', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
@@ -309,6 +593,12 @@ export default function AnalyticsPage() {
 
       {/* Main Content */}
       <main className="container" style={{ padding: isMobile() ? '1rem' : '2rem' }}>
+        {/* حالة المصادر القانونية */}
+        <LegalSourcesStatus theme={theme} isMobile={isMobile()} />
+        
+        {/* حالة التحديثات القانونية */}
+        <LegalUpdatesStatus theme={theme} isMobile={isMobile()} />
+        
         {loading && (
           <div className="text-center muted" style={{ padding: '3rem' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
@@ -317,10 +607,10 @@ export default function AnalyticsPage() {
         )}
 
         {error && (
-          <div className="card-panel" style={{ padding: '1.5rem', background: '#fef2f2', borderColor: '#fecaca', color: '#dc2626', textAlign: 'center' }}>
+          <div className="card-panel" style={{ padding: '1.5rem', background: theme.errorBg, borderColor: theme.errorText, color: theme.errorText, textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❌</div>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#dc2626' }}>حدث خطأ في تحليل البيانات</h3>
-            <p style={{ margin: '0 0 1.5rem 0', color: '#dc2626' }}>{error}</p>
+            <h3 style={{ margin: '0 0 1rem 0', color: theme.errorText }}>حدث خطأ في تحليل البيانات</h3>
+            <p style={{ margin: '0 0 1.5rem 0', color: theme.errorText }}>{error}</p>
             <button 
               onClick={fetchAnalytics}
               disabled={loading}
@@ -406,6 +696,197 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
+            {/* التحليل التنبؤي */}
+            {analytics.predictiveAnalyses && analytics.predictiveAnalyses.length > 0 && (
+              <div style={{
+                background: theme.card,
+                padding: '1.5rem',
+                borderRadius: '0.75rem',
+                boxShadow: `0 1px 3px ${theme.shadow}`,
+                marginBottom: '1.5rem'
+              }}>
+                <h2 style={{
+                  color: theme.text,
+                  margin: '0 0 1rem 0',
+                  fontSize: '1.25rem',
+                  fontWeight: 'bold'
+                }}>
+                  🔮 التحليل التنبؤي للقضايا
+                </h2>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '1rem'
+                }}>
+                  {analytics.predictiveAnalyses.slice(0, 6).map((analysis) => (
+                    <div key={analysis.caseId} style={{
+                      background: theme.resultBg,
+                      padding: '1rem',
+                      borderRadius: '0.5rem',
+                      border: `1px solid ${theme.border}`,
+                      transition: 'transform 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.75rem'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{
+                            color: theme.text,
+                            margin: '0 0 0.5rem 0',
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold'
+                          }}>
+                            {analysis.caseName}
+                          </h3>
+                          <div style={{
+                            display: 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'center',
+                            marginBottom: '0.5rem'
+                          }}>
+                            <span style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold',
+                              color: '#fff',
+                              background: analysis.successProbability >= 70 ? '#10b981' : 
+                                         analysis.successProbability >= 40 ? '#f59e0b' : '#ef4444'
+                            }}>
+                              {analysis.successProbability.toFixed(0)}% نجاح
+                            </span>
+                            <span style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold',
+                              color: '#fff',
+                              background: analysis.riskLevel === 'low' ? '#10b981' : 
+                                         analysis.riskLevel === 'medium' ? '#f59e0b' : '#ef4444'
+                            }}>
+                              مخاطر {analysis.riskLevel === 'low' ? 'منخفضة' : 
+                                     analysis.riskLevel === 'medium' ? 'متوسطة' : 'عالية'}
+                            </span>
+                          </div>
+                        </div>
+                        <Link href={`/cases/${analysis.caseId}`}>
+                          <button style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '0.25rem',
+                            border: 'none',
+                            background: theme.accent,
+                            color: '#fff',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                          }}>
+                            عرض
+                          </button>
+                        </Link>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div style={{
+                        width: '100%',
+                        height: '0.5rem',
+                        background: theme.border,
+                        borderRadius: '0.25rem',
+                        marginBottom: '0.75rem',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${analysis.successProbability}%`,
+                          height: '100%',
+                          background: analysis.successProbability >= 70 ? '#10b981' : 
+                                     analysis.successProbability >= 40 ? '#f59e0b' : '#ef4444',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+
+                      {/* Recommendations */}
+                      <div style={{
+                        background: theme.card,
+                        padding: '0.75rem',
+                        borderRadius: '0.375rem',
+                        border: `1px solid ${theme.border}`
+                      }}>
+                        <h4 style={{
+                          color: theme.text,
+                          margin: '0 0 0.5rem 0',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}>
+                          التوصيات
+                        </h4>
+                        <ul style={{
+                          color: theme.text,
+                          margin: '0',
+                          padding: '0 0 0 1rem',
+                          fontSize: '0.75rem',
+                          opacity: 0.8
+                        }}>
+                          {analysis.recommendations.slice(0, 2).map((rec, index) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Legal Context */}
+                      {analysis.legalContext && analysis.legalContext.relevantLaws.length > 0 && (
+                        <div style={{
+                          background: '#f0f9ff',
+                          padding: '0.75rem',
+                          borderRadius: '0.375rem',
+                          border: `1px solid #0ea5e9`,
+                          marginTop: '0.75rem'
+                        }}>
+                          <h4 style={{
+                            color: '#0c4a6e',
+                            margin: '0 0 0.5rem 0',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold'
+                          }}>
+                            📚 القوانين ذات الصلة
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            {analysis.legalContext.relevantLaws.slice(0, 2).map((law, idx) => (
+                              <div key={idx} style={{ fontSize: '0.7rem', color: '#0c4a6e' }}>
+                                • {law.title} ({law.source})
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Additional Info */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: '0.75rem',
+                        fontSize: '0.7rem',
+                        color: theme.text,
+                        opacity: 0.6
+                      }}>
+                        <span>المدة: {analysis.estimatedDuration}</span>
+                        <span>التعقيد: {analysis.complexityScore.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gap: '1.5rem' }}>
               {/* الإحصائيات الأساسية */}
               <div className="grid-auto">
@@ -432,7 +913,7 @@ export default function AnalyticsPage() {
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📈</div>
                   <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>معدل النجاح</h3>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: darkMode ? '#10b981' : '#059669' }}>
                     {analytics.successRate}%
                   </div>
                 </div>
@@ -446,7 +927,7 @@ export default function AnalyticsPage() {
                 }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
                   <h3 style={{ margin: '0 0 0.5rem 0', color: theme.text }}>متوسط الإنجاز</h3>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: darkMode ? '#fbbf24' : '#d97706' }}>
                     {analytics.averageStagesCompleted}%
                   </div>
                 </div>

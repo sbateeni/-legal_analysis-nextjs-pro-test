@@ -1,12 +1,13 @@
 // Simple Service Worker with basic caching strategies
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const PRECACHE = `precache-${VERSION}`;
 const RUNTIME = `runtime-${VERSION}`;
 
+// لا تقم بتخزين الصفحة الرئيسية حتى لا نثبّت نسخة قديمة من الـ HTML
 const PRECACHE_URLS = [
-  '/',
   '/manifest.json',
   '/favicon.ico',
+  '/offline',
 ];
 
 self.addEventListener('install', (event) => {
@@ -23,6 +24,14 @@ self.addEventListener('activate', (event) => {
       }
     }))).then(() => self.clients.claim())
   );
+});
+
+// دعم الرسائل (مثلاً skipWaiting يدوي)
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 function fromNetwork(request, timeoutMs = 4000) {
@@ -54,6 +63,11 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET
   if (request.method !== 'GET') return;
 
+  // استثناء مسارات HMR و Next assets حتى لا نكسر Fast Refresh
+  if (url.pathname.startsWith('/_next/') || url.pathname.includes('hot-update')) {
+    return;
+  }
+
   // API: network-first with short timeout
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -68,14 +82,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation/documents: network-first then cache
+  // Navigation/documents: network-first then cache مع صفحة Offline إن توفرت
   if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(
       fetch(request).then((response) => {
         const copy = response.clone();
         caches.open(RUNTIME).then((cache) => cache.put(request, copy));
         return response;
-      }).catch(() => caches.match(request).then((res) => res || caches.match('/')))
+      }).catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const offline = await caches.match('/offline');
+        return offline || Response.error();
+      })
     );
     return;
   }
